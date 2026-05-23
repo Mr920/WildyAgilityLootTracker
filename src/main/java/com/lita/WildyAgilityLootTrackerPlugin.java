@@ -74,7 +74,7 @@ import java.util.regex.Pattern;
 */
 
 
-private class LtaLootItem {
+class LtaLootItem {
     public static final String TYPE_SUPPLY = "Supply";
     public static final String TYPE_ARMOUR = "Armour";
 
@@ -131,10 +131,10 @@ private class LtaLootItem {
 
     /* Doing some method wrappers for my own convenience */
     public static int getItemPrice(int itemID){
-        return net.runelite.client.game.ItemManager.getItemPrice(itemID);
+        return WildyAgilityLootTrackerPlugin._ItemManager.getItemPrice(itemID);
     }
     public static AsyncBufferedImage getImage(int itemID){
-        return net.runelite.client.game.ItemManager.getImage(itemID);
+        return WildyAgilityLootTrackerPlugin._ItemManager.getImage(itemID);
     }
 
     public static String getItemName(int itemID){
@@ -241,6 +241,7 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
     public Pattern highlightP;
     public Pattern itemP;
 
+    public static net.runelite.client.game.ItemManager _ItemManager;
 
     @Inject
     private Client client;
@@ -250,7 +251,7 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
 
 
 
-    public debug_LogCurrentItems(){
+    public void debug_LogCurrentItems(){
         log.debug("===== Supplies =====");
         for (LtaLootItem supplyItem: supplies){
             log.debug(supplyItem.toDebugString());
@@ -295,7 +296,7 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
     */
     @Subscribe
     public void onChatMessage(ChatMessage cMsgEvent){
-        if (cMsgEvent.getType() === GAMEMESSAGE){
+        if (cMsgEvent.getType() == ChatMessageType.GAMEMESSAGE){
             String  msg = cMsgEvent.getMessage();
             Matcher  _m = awardP.matcher(msg);
             if (_m.matches()){
