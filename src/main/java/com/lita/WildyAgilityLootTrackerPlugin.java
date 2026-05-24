@@ -116,7 +116,31 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
         }
     }
 
-
+    public void init_LootItems(){
+        supplies   = LtaLootItem.getSupplyItems();
+        armour     = LtaLootItem.getAllArmourItems();
+        for (LtaLootItem supplyItem: supplies){
+            supplyItem._detectIfConfigured(this.config);
+        }
+        for (LtaLootItem armourItem: armour){
+            armourItem._detectIfConfigured(this.config);
+        }
+    }
+    public LtaLootItem getMatchingLootItem(int itemId, LtaLootItem[] searchList){
+                int index         = 0;
+        LtaLootItem matchedObject = null;
+        while ((index < searchList.length) && (matchedObject == null)){
+            if (searchList[index].id == itemId){ matchedObject = searchList[index]; }
+            index++;
+        }
+        return matchedObject;
+    }
+    public LtaLootItem getMatchingSupplyItem(int itemId){
+        return getMatchingLootItem(itemId, supplies);
+    }
+    public LtaLootItem getMatchingArmourItem(int itemId){
+        return getMatchingLootItem(itemId, armour);
+    }
 
     @Override
     protected void startUp() throws Exception
@@ -125,6 +149,12 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
         awardP     = Pattern.compile("You have been awarded");
         highlightP = Pattern.compile("[<]col[=]ef1020[>]([^<]+)[<].col[>]");
         itemP      = Pattern.compile("([0-9]+) x (.+)");
+
+        /* It doesn't feel right to throw this part in startup, given the io costs and such, but until I better learn the plugin event lifecycle, this will just have to do
+           also if this is only called once, yet the user has a habit of logging in and out over and over again over time without relaunching runelite (*cough*, like you) then
+           the price data could get stale, we should think about detecting price changes and config changes that occur after startup
+        */
+        init_LootItems();
     }
 
     @Override
@@ -144,7 +174,42 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
             saidHi = true;
         }
     }
-    
+
+    public int[] parseOut_LootItem(Matcher highlightMatcher){
+        if (! highlightMatcher.find()) { log.info("Failed to match highlight pattern"); return new int[] {1, 0}; } // i know this will bite me in the ass, I'll fix it later
+        String hStr = highlightMatcher.group(1);
+        Matcher itemMatcher = itemP.matcher(hStr);
+        if (! itemMatcher.find()) { log.info("Failed to match item pattern"); return new int[] {1, 0}; }           // i know this will bite me in the ass, I'll fix it later
+        String QtyS  = itemMatcher.group(1);
+        String ItemS = itemMatcher.group(2);
+        int    ItemId = LtaLootItem.getItemIdFromName(ItemS);
+        int       Qty = Integer.parseInt(QtyS);
+        return new int[] { ItemId, Qty };
+    }
+    public LtaLootItem parseOut_SupplyItem(Matcher highlightMatcher){
+              int[] parsedValues = parseOut_LootItem(highlightMatcher);
+                int itemId       = parsedValues[0];
+                int Qty          = parsedValues[1];
+        LtaLootItem supplyItem   = getMatchingSupplyItem(itemId);
+        supplyItem.haveQuantity += Qty;
+        return supplyItem;
+    }
+    public LtaLootItem parseOut_ArmourItem(Matcher highlightMatcher){
+              int[] parsedValues = parseOut_LootItem(highlightMatcher);
+                int itemId       = parsedValues[0];
+                int Qty          = parsedValues[1];
+        LtaLootItem armourItem   = getMatchingArmourItem(itemId);
+        armourItem.haveQuantity += Qty;
+        return armourItem;
+    }
+    public void parseAwardMessage(String msg){
+        Matcher _hm = highlightP.matcher(msg);
+        LtaLootItem updatedSupplyItem = parseOut_SupplyItem(_hm);
+        LtaLootItem updatedArmourItem = parseOut_ArmourItem(_hm);
+        //log.info(String.format("Parsed -> (Supply : Qty=%s , Name=%s) : (Armour : Qty=%s, Name=%s)", supplyQtyS, supplyItemS, armourQtyS, armourItemS));
+        log.info(String.format("Parsed & Updated -> %s", updatedSupplyItem.toDebugString()));
+    }
+
     /*
         net.runelite.api.ChatMessageType
         net.runelite.api.events.ChatMessage
@@ -155,21 +220,10 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
         if (cMsgEvent.getType() == ChatMessageType.GAMEMESSAGE){
             String  msg = cMsgEvent.getMessage();
             Matcher  _m = awardP.matcher(msg);
+            /* This whole block is messy and should be broken down and cleaned up somehow, but be wary of excessive function call nesting
+            */
             if (_m.find()){
-                Matcher _hm = highlightP.matcher(msg);
-                if (! _hm.find()) { log.info("Award Pattern Matched, but not the highlight pattern"); return; }
-                String hStr = _hm.group(1);
-                Matcher _im = itemP.matcher(hStr);
-                if (! _im.find()) { log.info("Highlight Pattern Matched, but not the item pattern"); return; }
-                String supplyQtyS  = _im.group(1);
-                String supplyItemS = _im.group(2);
-                if (! _hm.find()){ log.info("Failed to find 2nd highlight match"); return; };
-                hStr = _hm.group(1);
-                _im  = itemP.matcher(hStr);
-                if (! _im.find()){ log.info("Highlight Pattern Matched, but not the item pattern (2nd call)"); return; };
-                String armourQtyS = _im.group(1);
-                String armourItemS = _im.group(2);
-                log.info(String.format("Parsed -> (Supply : Qty=%s , Name=%s) : (Armour : Qty=%s, Name=%s)", supplyQtyS, supplyItemS, armourQtyS, armourItemS));
+                parseAwardMessage(msg);
             }
             else {
                 log.info("Game Message does not match the award text pattern");

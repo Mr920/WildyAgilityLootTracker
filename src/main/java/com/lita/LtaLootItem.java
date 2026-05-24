@@ -4,41 +4,44 @@ import net.runelite.api.gameval.ItemID;
 import net.runelite.client.util.AsyncBufferedImage;
 
 public class LtaLootItem {
+
+    // @@@@@ STATIC STUFF FIRST @@@@@
+
     public static final String TYPE_SUPPLY = "Supply";
     public static final String TYPE_ARMOUR = "Armour";
 
     public static int[] getSupplyItemIds(){
         return new int[] {
-                net.runelite.api.gameval.ItemID.BLIGHTED_ANGLERFISH,
-                net.runelite.api.gameval.ItemID.BLIGHTED_MANTARAY,
-                net.runelite.api.gameval.ItemID.BLIGHTED_KARAMBWAN,
-                net.runelite.api.gameval.ItemID.BLIGHTED_4DOSE2RESTORE
+                ItemID.BLIGHTED_ANGLERFISH,
+                ItemID.BLIGHTED_MANTARAY,
+                ItemID.BLIGHTED_KARAMBWAN,
+                ItemID.BLIGHTED_4DOSE2RESTORE
         };
     }
     public static int[] getSteelArmourItemIds(){
         return new int[] {
-                net.runelite.api.gameval.ItemID.STEEL_PLATEBODY
+                ItemID.STEEL_PLATEBODY
         };
     }
     public static int[] getMithrilArmourItemIds(){
         return new int[] {
-                net.runelite.api.gameval.ItemID.MITHRIL_CHAINBODY,
-                net.runelite.api.gameval.ItemID.MITHRIL_PLATELEGS,
-                net.runelite.api.gameval.ItemID.MITHRIL_PLATESKIRT
+                ItemID.MITHRIL_CHAINBODY,
+                ItemID.MITHRIL_PLATELEGS,
+                ItemID.MITHRIL_PLATESKIRT
         };
     }
     public static int[] getAdamantArmourItemIds(){
         return new int[] {
-                net.runelite.api.gameval.ItemID.ADAMANT_FULL_HELM,
-                net.runelite.api.gameval.ItemID.ADAMANT_PLATEBODY,
-                net.runelite.api.gameval.ItemID.ADAMANT_PLATELEGS
+                ItemID.ADAMANT_FULL_HELM,
+                ItemID.ADAMANT_PLATEBODY,
+                ItemID.ADAMANT_PLATELEGS
         };
     }
     public static int[] getRuneArmourItemIds(){
         return new int[] {
-                net.runelite.api.gameval.ItemID.RUNE_MED_HELM,
-                net.runelite.api.gameval.ItemID.RUNE_CHAINBODY,
-                net.runelite.api.gameval.ItemID.RUNE_KITESHIELD
+                ItemID.RUNE_MED_HELM,
+                ItemID.RUNE_CHAINBODY,
+                ItemID.RUNE_KITESHIELD
         };
     }
     public static int[] getAllArmourItemIds(){
@@ -68,21 +71,40 @@ public class LtaLootItem {
 
     public static String getItemName(int itemID){
         switch(itemID){
-            case net.runelite.api.gameval.ItemID.BLIGHTED_ANGLERFISH:    return "Blighted anglerfish";
-            case net.runelite.api.gameval.ItemID.BLIGHTED_MANTARAY:      return "Blighted manta ray";
-            case net.runelite.api.gameval.ItemID.BLIGHTED_KARAMBWAN:     return "Blighted karambwan";
-            case net.runelite.api.gameval.ItemID.BLIGHTED_4DOSE2RESTORE: return "Blighted super restore(4)";
-            case net.runelite.api.gameval.ItemID.STEEL_PLATEBODY:        return "Steel platebody";
-            case net.runelite.api.gameval.ItemID.MITHRIL_CHAINBODY:      return "Mithril chainbody";
-            case net.runelite.api.gameval.ItemID.MITHRIL_PLATELEGS:      return "Mithril platelegs";
-            case net.runelite.api.gameval.ItemID.MITHRIL_PLATESKIRT:     return "Mithril plateskirt";
-            case net.runelite.api.gameval.ItemID.ADAMANT_FULL_HELM:      return "Adamant full helm";
-            case net.runelite.api.gameval.ItemID.ADAMANT_PLATEBODY:      return "Adamant platebody";
-            case net.runelite.api.gameval.ItemID.ADAMANT_PLATELEGS:      return "Adamant platelegs";
-            case net.runelite.api.gameval.ItemID.RUNE_MED_HELM:          return "Rune med helm";
-            case net.runelite.api.gameval.ItemID.RUNE_CHAINBODY:         return "Rune chainbody";
-            case net.runelite.api.gameval.ItemID.RUNE_KITESHIELD:        return "Rune kiteshield";
-            default:                                                     return "UNRECOGNIZED ITEM_ID";
+            case ItemID.BLIGHTED_ANGLERFISH:    return "Blighted anglerfish";
+            case ItemID.BLIGHTED_MANTARAY:      return "Blighted manta ray";
+            case ItemID.BLIGHTED_KARAMBWAN:     return "Blighted karambwan";
+            case ItemID.BLIGHTED_4DOSE2RESTORE: return "Blighted super restore(4)";
+            case ItemID.STEEL_PLATEBODY:        return "Steel platebody";
+            case ItemID.MITHRIL_CHAINBODY:      return "Mithril chainbody";
+            case ItemID.MITHRIL_PLATELEGS:      return "Mithril platelegs";
+            case ItemID.MITHRIL_PLATESKIRT:     return "Mithril plateskirt";
+            case ItemID.ADAMANT_FULL_HELM:      return "Adamant full helm";
+            case ItemID.ADAMANT_PLATEBODY:      return "Adamant platebody";
+            case ItemID.ADAMANT_PLATELEGS:      return "Adamant platelegs";
+            case ItemID.RUNE_MED_HELM:          return "Rune med helm";
+            case ItemID.RUNE_CHAINBODY:         return "Rune chainbody";
+            case ItemID.RUNE_KITESHIELD:        return "Rune kiteshield";
+            default:                            return "UNRECOGNIZED ITEM_ID";
+        }
+    }
+    public static int getItemIdFromName(String itemName){
+        switch(itemName){
+            case "Blighted anglerfish":         return ItemID.BLIGHTED_ANGLERFISH;
+            case "Blighted manta ray":          return ItemID.BLIGHTED_MANTARAY;
+            case "Blighted karambwan":          return ItemID.BLIGHTED_KARAMBWAN;
+            case "Blighted super restore(4)":   return ItemID.BLIGHTED_4DOSE2RESTORE;
+            case "Steel platebody":             return ItemID.STEEL_PLATEBODY;
+            case "Mithril chainbody":           return ItemID.MITHRIL_CHAINBODY;
+            case "Mithril platelegs":           return ItemID.MITHRIL_PLATELEGS;
+            case "Mithril plateskirt":          return ItemID.MITHRIL_PLATESKIRT;
+            case "Adamant full helm":           return ItemID.ADAMANT_FULL_HELM;
+            case "Adamant platebody":           return ItemID.ADAMANT_PLATEBODY;
+            case "Adamant platelegs":           return ItemID.ADAMANT_PLATELEGS;
+            case "Rune med helm":               return ItemID.RUNE_MED_HELM;
+            case "Rune chainbody":              return ItemID.RUNE_CHAINBODY;
+            case "Rune kiteshield":             return ItemID.RUNE_KITESHIELD;
+            default:                            return 1; // because this totally won't blow up in our face one day
         }
     }
     public static String getItemType(int itemID){
@@ -119,16 +141,14 @@ public class LtaLootItem {
         }
         return items;
     }
-    public static LtaLootItem[] getSupplyItems(){
-        return getItemsFromIdList(getSupplyItemIds());
-    }
+    public static LtaLootItem[] getSupplyItems(){           return getItemsFromIdList(getSupplyItemIds());          }
     public static LtaLootItem[] getSteelArmourItems(){      return getItemsFromIdList(getSteelArmourItemIds());     }
     public static LtaLootItem[] getMithrilArmourItems(){    return getItemsFromIdList(getMithrilArmourItemIds());   }
     public static LtaLootItem[] getAdamantArmourItems(){    return getItemsFromIdList(getAdamantArmourItemIds());   }
     public static LtaLootItem[] getRuneArmourItems(){       return getItemsFromIdList(getRuneArmourItemIds());      }
     public static LtaLootItem[] getAllArmourItems(){        return getItemsFromIdList(getAllArmourItemIds());       }
 
-
+    // @@@@@ INSTANCE STUFF @@@@@
 
     public int                  id;
     public String               name;
@@ -149,6 +169,56 @@ public class LtaLootItem {
 
     public int getTotalValue(){
         return this.price * this.haveQuantity;
+    }
+    public boolean isSteelArmour(){
+        return (this.id == ItemID.STEEL_PLATEBODY);
+    }
+    public boolean isMithrilArmour(){
+        switch(this.id){
+            case ItemID.MITHRIL_CHAINBODY:
+            case ItemID.MITHRIL_PLATELEGS:
+            case ItemID.MITHRIL_PLATESKIRT:
+                return true;
+            default:
+                return false;
+        }
+    }
+    public boolean isAdamantArmour(){
+        switch(this.id){
+            case ItemID.ADAMANT_FULL_HELM:
+            case ItemID.ADAMANT_PLATEBODY:
+            case ItemID.ADAMANT_PLATELEGS:
+                return true;
+            default:
+                return false;
+        }
+    }
+    public boolean isRuneArmour(){
+        switch(this.id){
+            case ItemID.RUNE_MED_HELM:
+            case ItemID.RUNE_CHAINBODY:
+            case ItemID.RUNE_KITESHIELD:
+                return true;
+            default:
+                return false;
+        }
+    }
+    public boolean isSupplyItem(){
+        return getItemType(this.id).equals(TYPE_SUPPLY);
+    }
+    public boolean isArmourItem(){
+        return getItemType(this.id).equals(TYPE_ARMOUR);
+    }
+    public void _detectIfConfigured(WildyAgilityLootTrackerConfig configObject){
+        if (this.isSupplyItem()){
+                                         this.display = configObject.getShowSupplies();      return;
+        }
+        if (this.isArmourItem()){
+            if (this.isSteelArmour()){   this.display = configObject.getShowSteelArmour();   return; }
+            if (this.isMithrilArmour()){ this.display = configObject.getShowMithrilArmour(); return; }
+            if (this.isAdamantArmour()){ this.display = configObject.getShowAdamantArmour(); return; }
+            if (this.isRuneArmour()){    this.display = configObject.getShowRuneArmour();    return; }
+        }
     }
 
     public String toDebugString(){
