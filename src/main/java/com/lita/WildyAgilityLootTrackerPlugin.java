@@ -19,9 +19,11 @@ import net.runelite.client.game.ItemManager;
 import net.runelite.client.util.AsyncBufferedImage;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.client.callback.ClientThread;
+import net.runelite.client.ui.overlay.OverlayManager;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.time.LocalDateTime;
 
 
 
@@ -71,6 +73,14 @@ import java.util.regex.Pattern;
         - Detect logouts / logins
         - Give users the ability to override the estimated item prices in the config; This will be on a per-session basis, with the default behavior still being to pull them from the client API at the start of a new session
         - Maybe show additional statistics like the most recent bag-value-increase amount, maybe show an average rate of increase as well
+
+    Client Events we should probably be listening to:
+        ClientShutdown
+        ConfigChanged
+        ConfigSync
+        RuneScapeProfileChanged
+        SessionOpen
+        SessionClose
 
 
 */
@@ -123,11 +133,38 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
     private WildyAgilityLootTrackerConfig config;
     @Inject
     private ItemManager __ItemManager;
+    @Inject
+    private OverlayManager overlayManager;
+    @Inject
+    private WildyAgilityLootTrackerOverlay overlay;
 
-    public int currentStreak = 0;
-    public int currentLap    = 0;
+    public           int currentSessionNum      = 0; // this is for the future, but won't be reliable until later
+    public LocalDateTime currentSessionStartDt  = null;
+    public LocalDateTime currentSessionEndDt    = null;
+    public           int currentStreak          = 0;
+    public           int currentLap             = 0;
 
 
+    public void startSession(){
+        this.currentSessionNum++;
+        this.currentSessionStartDt = LocalDateTime.now();
+    }
+    public void endSession(){
+        this.currentSessionEndDt = LocalDateTime.now();
+        saveCurrentSession();
+        clearCurrentState();
+    }
+    public void saveCurrentSession(){
+        // to-do
+    }
+    public void clearCurrentState(){
+        this.currentStreak = 0;
+        this.currentLap    = 0;
+        this.supplies      = null;
+        this.armour        = null;
+        //init_LootItems();
+        //startSession();
+    }
     public void debug_LogCurrentItems(){
         log.info("===== Supplies =====");
         for (LtaLootItem supplyItem: supplies){
@@ -181,33 +218,46 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
         else {
             log.info(String.format("__ItemManager.toString() => %s", this.__ItemManager.toString()));
         }
-        //WildyAgilityLootTrackerPlugin._ItemManager
+
         /* It doesn't feel right to throw this part in startup, given the io costs and such, but until I better learn the plugin event lifecycle, this will just have to do
            also if this is only called once, yet the user has a habit of logging in and out over and over again over time without relaunching runelite (*cough*, like you) then
            the price data could get stale, we should think about detecting price changes and config changes that occur after startup
         */
-        clientThread.invoke(() -> {
+        clientThread.invokeLater(() -> {
             init_LootItems();
+            startSession();
+            overlayManager.add(overlay);
         });
-        //init_LootItems();
     }
 
     @Override
     protected void shutDown() throws Exception
     {
+        endSession();
         log.info("WildyAgilityLootTrackerPlugin stopped!");
     }
 
+    public void reportRunning(){
+        String reportMessage = "WildyAgilityLootTrackerPlugin is running.";
+        clientThread.invokeLater(() -> {
+            log.info(reportMessage);
+            client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", reportMessage, null);
+        });
+    }
 
+    public void onUserLogin(){
+        if ((! saidHi) && (this.client.getLocalPlayer() != null)){
+            reportRunning();
+            saidHi = true;
+        }
+    }
 
     @Subscribe
     public void onGameStateChanged(GameStateChanged gameStateChanged)
     {
-        if ((gameStateChanged.getGameState() == GameState.LOGGED_IN) && (! saidHi) && (this.client.getLocalPlayer() != null))
+        if (gameStateChanged.getGameState() == GameState.LOGGED_IN)
         {
-            //client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "WildyAgilityLootTrackerPlugin says " + config.greeting(), null);
-            client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "WildyAgilityLootTrackerPlugin seems to be running", null);
-            saidHi = true;
+            onUserLogin();
         }
     }
 
@@ -327,7 +377,6 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
 
 
     public static void main(String[] args) throws Exception {
-        //log.debug("This plugin isn't really meant to be called in standalone fashion...");
         ExternalPluginManager.loadBuiltin(WildyAgilityLootTrackerPlugin.class);
         RuneLite.main(args);
     }
