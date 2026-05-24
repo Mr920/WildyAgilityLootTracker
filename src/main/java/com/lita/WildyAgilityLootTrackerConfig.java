@@ -13,7 +13,7 @@ public interface WildyAgilityLootTrackerConfig extends Config
     public boolean _showAdamantArmour = true;
     public boolean _showRuneArmour    = true;
 
-
+    /*
     @ConfigItem(
         keyName = "greeting",
         name = "Welcome Greeting",
@@ -23,6 +23,7 @@ public interface WildyAgilityLootTrackerConfig extends Config
     {
         return "Hello";
     }
+    */
 
     @ConfigItem(keyName = "ShowSupplies",      name="Show Supplies",       description = "Whether or not to track and display supply items")
     default boolean getShowSupplies(){

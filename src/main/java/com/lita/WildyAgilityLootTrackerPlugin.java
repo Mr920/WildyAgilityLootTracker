@@ -9,6 +9,7 @@ import net.runelite.api.GameState;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.client.RuneLite;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.externalplugins.ExternalPluginManager;
@@ -17,6 +18,7 @@ import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.util.AsyncBufferedImage;
 import net.runelite.api.gameval.ItemID;
+import net.runelite.client.callback.ClientThread;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -95,13 +97,19 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
     public Pattern itemP;
     public boolean saidHi = false;
 
+
     public static ItemManager _ItemManager;
 
     @Inject
     private Client client;
+    @Inject
+    private ClientThread clientThread;
 
     @Inject
     private WildyAgilityLootTrackerConfig config;
+
+    @Inject
+    private ItemManager __ItemManager;
 
 
 
@@ -149,12 +157,22 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
         awardP     = Pattern.compile("You have been awarded");
         highlightP = Pattern.compile("[<]col[=]ef1020[>]([^<]+)[<].col[>]");
         itemP      = Pattern.compile("([0-9]+) x (.+)");
-
+        WildyAgilityLootTrackerPlugin._ItemManager = this.__ItemManager;
+        if (this.__ItemManager == null){
+            log.info("__ItemManager is null");
+        }
+        else {
+            log.info(String.format("__ItemManager.toString() => %s", this.__ItemManager.toString()));
+        }
+        //WildyAgilityLootTrackerPlugin._ItemManager
         /* It doesn't feel right to throw this part in startup, given the io costs and such, but until I better learn the plugin event lifecycle, this will just have to do
            also if this is only called once, yet the user has a habit of logging in and out over and over again over time without relaunching runelite (*cough*, like you) then
            the price data could get stale, we should think about detecting price changes and config changes that occur after startup
         */
-        init_LootItems();
+        clientThread.invoke(() -> {
+            init_LootItems();
+        });
+        //init_LootItems();
     }
 
     @Override
@@ -170,7 +188,8 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
     {
         if ((gameStateChanged.getGameState() == GameState.LOGGED_IN) && (! saidHi) && (this.client.getLocalPlayer() != null))
         {
-            client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "WildyAgilityLootTrackerPlugin says " + config.greeting(), null);
+            //client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "WildyAgilityLootTrackerPlugin says " + config.greeting(), null);
+            client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "WildyAgilityLootTrackerPlugin seems to be running", null);
             saidHi = true;
         }
     }
@@ -207,7 +226,8 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
         LtaLootItem updatedSupplyItem = parseOut_SupplyItem(_hm);
         LtaLootItem updatedArmourItem = parseOut_ArmourItem(_hm);
         //log.info(String.format("Parsed -> (Supply : Qty=%s , Name=%s) : (Armour : Qty=%s, Name=%s)", supplyQtyS, supplyItemS, armourQtyS, armourItemS));
-        log.info(String.format("Parsed & Updated -> %s", updatedSupplyItem.toDebugString()));
+        log.info(String.format("Parsed & Updated [S] -> %s", updatedSupplyItem.toDebugString()));
+        log.info(String.format("Parsed & Updated [A] -> %s", updatedArmourItem.toDebugString()));
     }
 
     /*
@@ -226,8 +246,8 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
                 parseAwardMessage(msg);
             }
             else {
-                log.info("Game Message does not match the award text pattern");
-                log.info(String.format("Game Message was: '%s'", msg));
+                //log.info("Game Message does not match the award text pattern");
+                //log.info(String.format("Game Message was: '%s'", msg));
             }
         }
     }
@@ -237,6 +257,9 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
     {
         return configManager.getConfig(WildyAgilityLootTrackerConfig.class);
     }
+
+
+
 
     public static void main(String[] args) throws Exception {
         //log.debug("This plugin isn't really meant to be called in standalone fashion...");
