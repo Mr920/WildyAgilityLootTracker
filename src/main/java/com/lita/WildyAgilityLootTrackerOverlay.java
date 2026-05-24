@@ -64,6 +64,8 @@ public class WildyAgilityLootTrackerOverlay extends OverlayPanel
 
     @Override
     public Dimension render(Graphics2D graphics){
+        panelComponent.setOrientation(ComponentOrientation.VERTICAL);
+
         List<LayoutableRenderableEntity> panelChildren = panelComponent.getChildren();
         panelChildren.add(makeSupplyRow());
         panelChildren.add(LineComponent.builder().build());
@@ -77,7 +79,8 @@ public class WildyAgilityLootTrackerOverlay extends OverlayPanel
         panelChildren.add(makeArmourRow(LtaLootItem.getRuneArmourItemIds()));
         panelChildren.add(LineComponent.builder().build());
 
-        //panelComponent.setPreferredSize(new Dimension((STANDARD_INVENTORY_ITEM_WIDTH * 4), (STANDARD_INVENTORY_ITEM_HEIGHT * 5)));
+        panelComponent.setPreferredSize(new Dimension((STANDARD_INVENTORY_ITEM_WIDTH * 4), (STANDARD_INVENTORY_ITEM_HEIGHT * 5)));
+        panelComponent.setGap(new Point(0, 4));
 
         return super.render(graphics);
     }
