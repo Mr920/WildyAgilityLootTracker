@@ -151,11 +151,11 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
     */
     @Subscribe
     public void onChatMessage(ChatMessage cMsgEvent){
-        log.info("WildyAgilityLootTrackerPlugin->onChatMessage()");
+        // log.info("WildyAgilityLootTrackerPlugin->onChatMessage()");
         if (cMsgEvent.getType() == ChatMessageType.GAMEMESSAGE){
             String  msg = cMsgEvent.getMessage();
             Matcher  _m = awardP.matcher(msg);
-            if (_m.matches()){
+            if (_m.find()){
                 Matcher _hm = highlightP.matcher(msg);
                 if (! _hm.find()) { log.info("Award Pattern Matched, but not the highlight pattern"); return; }
                 String hStr = _hm.group(1);
@@ -173,6 +173,7 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
             }
             else {
                 log.info("Game Message does not match the award text pattern");
+                log.info(String.format("Game Message was: '%s'", msg));
             }
         }
     }
