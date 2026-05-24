@@ -221,8 +221,22 @@ public class LtaLootItem {
         }
     }
 
+    public String toSmallGpStr(int value){
+        String numStr = String.format("%,d", value);
+        return String.format("%6s GP", numStr);
+    }
+    public String toBigGpStr(int value){
+        String numStr = String.format("%,d", value);
+        return String.format("%10s GP", numStr);
+    }
+    public String getTotalGpStr(){
+        return toBigGpStr(getTotalValue());
+    }
+    public String getPriceGpStr(){
+        return toSmallGpStr(this.price);
+    }
     public String toDebugString(){
-        return String.format("LtaLootItem[id=%06d] { Type=%s : Name=%-18s : %4d * %,d GP : %,d GP }", this.id, this.type, this.name, this.haveQuantity, this.price, getTotalValue());
+        return String.format("LtaLootItem[id=%06d]{ T: %s | N: %-27s | %4d * %s | %s }", this.id, this.type, this.name, this.haveQuantity, getPriceGpStr(), getTotalGpStr());
     }
 
 }

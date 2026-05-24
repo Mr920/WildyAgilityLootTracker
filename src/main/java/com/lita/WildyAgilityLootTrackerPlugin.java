@@ -250,7 +250,7 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
         String streakS = String.valueOf(this.currentStreak);
         String lapCntS = String.valueOf(this.currentLap);
         String bagValS = getTotalLootValueStr();
-        return String.format("===== Streak %4s : Lap %-7s => Bag Value %s =====", streakS, lapCntS, bagValS);
+        return String.format("===== Streak %4s : Lap %-7s => Bag Value %s =====\r\n", streakS, lapCntS, bagValS);
     }
     public void printCheckPointBanner(){
         String bStr = getCheckpointBannerStr();
