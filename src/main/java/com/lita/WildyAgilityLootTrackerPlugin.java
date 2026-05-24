@@ -58,7 +58,21 @@ import java.util.regex.Pattern;
             Parse Out the message
             Update session structures to reflect the addition of the new loot items
                 Keep track of streak and lap info?
-            
+
+
+
+    To-Do:
+        - Figure out why the client occasionally crashes, I suspect this still has something to do with trying to call that init_LootItems() in the Plugin's main startUp()
+        - Make this thing respect the config
+        - Session Management, complete with the ability to preserve historical information on the loot item quantities and prices from previous sessions
+        - Make the visual Overlay
+        - Give user's a "clear session" button
+        - Detect when user enters or leaves agility arena
+        - Detect logouts / logins
+        - Give users the ability to override the estimated item prices in the config; This will be on a per-session basis, with the default behavior still being to pull them from the client API at the start of a new session
+        - Maybe show additional statistics like the most recent bag-value-increase amount, maybe show an average rate of increase as well
+
+
 */
 /*      Items we care about: (not necessarily ordered in any deeply meaningful way)
         
