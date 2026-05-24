@@ -35,7 +35,7 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 tasks.register('run', JavaExec) {
-	classpath = sourceSets.test.runtimeClasspath
+	classpath = sourceSets.main.runtimeClasspath
 	mainClass = pluginMainClass
 
 	jvmArgs "-ea"

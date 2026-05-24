@@ -38,25 +38,26 @@ public class WildyAgilityLootTrackerOverlay extends OverlayPanel
         PanelComponent supplyRow = new PanelComponent();
         supplyRow.setOrientation(ComponentOrientation.HORIZONTAL);
         supplyRow.setPreferredSize(new Dimension((STANDARD_INVENTORY_ITEM_WIDTH * 4), STANDARD_INVENTORY_ITEM_HEIGHT));
-        supplyRow.setGap(new Point(4, 0));
+        supplyRow.setGap(new Point(4, 4));
         List<LayoutableRenderableEntity> panelChildren = supplyRow.getChildren();
         if (this.config.getShowSupplies()) {
             for (LtaLootItem supplyItem : this.plugin.supplies) {
-                panelChildren.add(new ImageComponent(supplyItem.image));
+                panelChildren.add(new ImageComponent(supplyItem.getQtyImage()));
             }
         }
+        //supplyRow.setBackgroundColor(new Color(204, 94, 66));
         return supplyRow;
     }
     public PanelComponent makeArmourRow(int[] armourTypeIds){
         PanelComponent armourRow = new PanelComponent();
         armourRow.setOrientation(ComponentOrientation.HORIZONTAL);
         armourRow.setPreferredSize(new Dimension((STANDARD_INVENTORY_ITEM_WIDTH * 4), STANDARD_INVENTORY_ITEM_HEIGHT));
-        armourRow.setGap(new Point(4, 0));
+        armourRow.setGap(new Point(4, 4));
         List<LayoutableRenderableEntity> panelChildren = armourRow.getChildren();
         for (int armourTypeId: armourTypeIds){
             LtaLootItem armourItem = this.plugin.getMatchingArmourItem(armourTypeId);
             if (armourItem.display){
-                panelChildren.add(new ImageComponent(armourItem.image));
+                panelChildren.add(new ImageComponent(armourItem.getQtyImage()));
             }
         }
         return armourRow;
@@ -65,7 +66,7 @@ public class WildyAgilityLootTrackerOverlay extends OverlayPanel
     @Override
     public Dimension render(Graphics2D graphics){
         panelComponent.setOrientation(ComponentOrientation.VERTICAL);
-
+        panelComponent.getChildren().clear();
         List<LayoutableRenderableEntity> panelChildren = panelComponent.getChildren();
         panelChildren.add(makeSupplyRow());
         panelChildren.add(LineComponent.builder().build());
@@ -80,7 +81,8 @@ public class WildyAgilityLootTrackerOverlay extends OverlayPanel
         panelChildren.add(LineComponent.builder().build());
 
         panelComponent.setPreferredSize(new Dimension((STANDARD_INVENTORY_ITEM_WIDTH * 4), (STANDARD_INVENTORY_ITEM_HEIGHT * 5)));
-        panelComponent.setGap(new Point(0, 4));
+        panelComponent.setGap(new Point(0, 12));
+
 
         return super.render(graphics);
     }

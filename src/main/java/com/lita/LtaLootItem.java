@@ -238,5 +238,8 @@ public class LtaLootItem {
     public String toDebugString(){
         return String.format("LtaLootItem[id=%06d]{ T: %s | N: %-27s | %4d * %s | %s }", this.id, this.type, this.name, this.haveQuantity, getPriceGpStr(), getTotalGpStr());
     }
+    public AsyncBufferedImage getQtyImage(){
+        return WildyAgilityLootTrackerPlugin._ItemManager.getImage(this.id, this.haveQuantity, true);
+    }
 
 }
