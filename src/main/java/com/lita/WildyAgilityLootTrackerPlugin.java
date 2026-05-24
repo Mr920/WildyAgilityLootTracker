@@ -95,8 +95,9 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
     public Pattern awardP;
     public Pattern highlightP;
     public Pattern itemP;
+    public Pattern rewardStreakP;
+    public Pattern lapCountP;
     public boolean saidHi = false;
-
 
     public static ItemManager _ItemManager;
 
@@ -104,13 +105,13 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
     private Client client;
     @Inject
     private ClientThread clientThread;
-
     @Inject
     private WildyAgilityLootTrackerConfig config;
-
     @Inject
     private ItemManager __ItemManager;
 
+    public int currentStreak = 0;
+    public int currentLap    = 0;
 
 
     public void debug_LogCurrentItems(){
@@ -154,9 +155,11 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
     protected void startUp() throws Exception
     {
         log.info("WildyAgilityLootTrackerPlugin started!");
-        awardP     = Pattern.compile("You have been awarded");
-        highlightP = Pattern.compile("[<]col[=]ef1020[>]([^<]+)[<].col[>]");
-        itemP      = Pattern.compile("([0-9]+) x (.+)");
+        awardP        = Pattern.compile("You have been awarded");
+        highlightP    = Pattern.compile("[<]col[=]ef1020[>]([^<]+)[<].col[>]");
+        itemP         = Pattern.compile("([0-9]+) x (.+)");
+        rewardStreakP = Pattern.compile("Wilderness Agility reward streak is: .col=ff0000.([0-9]+)");
+        lapCountP     = Pattern.compile("Wilderness Agility lap count is: .col=ff0000.([0-9]+)");
         WildyAgilityLootTrackerPlugin._ItemManager = this.__ItemManager;
         if (this.__ItemManager == null){
             log.info("__ItemManager is null");
@@ -228,6 +231,60 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
         //log.info(String.format("Parsed -> (Supply : Qty=%s , Name=%s) : (Armour : Qty=%s, Name=%s)", supplyQtyS, supplyItemS, armourQtyS, armourItemS));
         log.info(String.format("Parsed & Updated [S] -> %s", updatedSupplyItem.toDebugString()));
         log.info(String.format("Parsed & Updated [A] -> %s", updatedArmourItem.toDebugString()));
+        printCheckPointBanner();
+    }
+    public int getTotalLootValue(){
+        int total = 0;
+        for (LtaLootItem sItem: supplies){
+            total += sItem.getTotalValue();
+        }
+        for (LtaLootItem aItem: armour){
+            total += aItem.getTotalValue();
+        }
+        return total;
+    }
+    public String getTotalLootValueStr(){
+        return String.format("%14s", String.format("%,d GP", getTotalLootValue()));
+    }
+    public String getCheckpointBannerStr(){
+        String streakS = String.valueOf(this.currentStreak);
+        String lapCntS = String.valueOf(this.currentLap);
+        String bagValS = getTotalLootValueStr();
+        return String.format("===== Streak %4s : Lap %-7s => Bag Value %s =====", streakS, lapCntS, bagValS);
+    }
+    public void printCheckPointBanner(){
+        String bStr = getCheckpointBannerStr();
+        log.info(bStr);
+        client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", bStr, null);
+    }
+    public boolean checkIsAwardMessage(String chatMessage){
+        Matcher  _m = awardP.matcher(chatMessage);
+        if (! _m.find()){
+            //log.info("Game Message does not match the award text pattern");
+            //log.info(String.format("Game Message was: '%s'", msg));
+            return false;
+        }
+        parseAwardMessage(chatMessage);
+        return true;
+    }
+    public void updateLapCount(String msgMatchStr){
+        this.currentLap = Integer.parseInt(msgMatchStr);
+    }
+    public void updateStreak(String msgMatchStr){
+        this.currentStreak = Integer.parseInt(msgMatchStr);
+    }
+
+    public boolean checkIsLapCountMessage(String chatMessage){
+        Matcher _matcher = lapCountP.matcher(chatMessage);
+        if (! _matcher.find()){ return false; }
+        updateLapCount(_matcher.group(1));
+        return true;
+    }
+    public boolean checkIsStreakMessage(String chatMessage){
+        Matcher _matcher = rewardStreakP.matcher(chatMessage);
+        if (! _matcher.find()){ return false; }
+        updateStreak(_matcher.group(1));
+        return true;
     }
 
     /*
@@ -239,16 +296,10 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
         // log.info("WildyAgilityLootTrackerPlugin->onChatMessage()");
         if (cMsgEvent.getType() == ChatMessageType.GAMEMESSAGE){
             String  msg = cMsgEvent.getMessage();
-            Matcher  _m = awardP.matcher(msg);
-            /* This whole block is messy and should be broken down and cleaned up somehow, but be wary of excessive function call nesting
-            */
-            if (_m.find()){
-                parseAwardMessage(msg);
-            }
-            else {
-                //log.info("Game Message does not match the award text pattern");
-                //log.info(String.format("Game Message was: '%s'", msg));
-            }
+            if (checkIsLapCountMessage(msg)){ return; }
+            if (checkIsStreakMessage(msg)){ return; }
+            if (checkIsAwardMessage(msg)){ return; }
+            // additional checks
         }
     }
 

@@ -222,7 +222,7 @@ public class LtaLootItem {
     }
 
     public String toDebugString(){
-        return String.format("LtaLootItem { id = %d, name='%s', type='%s', price=%d, qty=%d, value=%d }", this.id, this.name, this.type, this.price, this.haveQuantity, getTotalValue());
+        return String.format("LtaLootItem[id=%06d] { Type=%s : Name=%-18s : %4d * %,d GP : %,d GP }", this.id, this.type, this.name, this.haveQuantity, this.price, getTotalValue());
     }
 
 }
