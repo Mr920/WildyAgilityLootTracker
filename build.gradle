@@ -1,6 +1,20 @@
+// https://docs.gradle.org/8.10/javadoc/org/gradle/api/Project.html
+
 plugins {
 	id 'java'
 }
+
+def pluginProjectVersion = '1.0.0'
+def pluginProjectName  = "${rootProject.name}"
+def pluginPackage        = 'com.lita'
+def pluginGroup          = pluginPackage
+def pluginMainClass    = "${pluginPackage}.${pluginProjectName}Plugin"
+def pluginTestClass    = "${pluginMainClass}Test"
+def pluginJarName      = "${pluginProjectName}-${pluginProjectVersion}-all.jar"
+def pluginJarGroup       = BasePlugin.BUILD_GROUP
+def runeLiteVersion      = 'latest.release'
+
+project.version = pluginProjectVersion
 
 repositories {
 	mavenLocal()
@@ -13,9 +27,6 @@ repositories {
 	mavenCentral()
 }
 
-def runeLiteVersion = 'latest.release'
-def pluginMainClass = 'com.lita.WildyAgilityLootTrackerPlugin'
-
 dependencies {
 	compileOnly group: 'net.runelite', name:'client', version: runeLiteVersion
 
@@ -27,21 +38,30 @@ dependencies {
 	testImplementation group: 'net.runelite', name:'jshell', version: runeLiteVersion
 }
 
-group = 'com.lita'
+group = pluginGroup
 
 tasks.withType(JavaCompile).configureEach {
 	options.encoding = 'UTF-8'
 //	options.release.set(11)
 }
 
-tasks.register('run', JavaExec) {
-	classpath = sourceSets.main.runtimeClasspath
-	mainClass = pluginMainClass
-
+// https://docs.gradle.org/8.10/javadoc/org/gradle/api/tasks/TaskContainer.html#register(java.lang.String,java.lang.Class)
+// https://docs.gradle.org/8.10/javadoc/org/gradle/api/tasks/JavaExec.html
+tasks.register('runTest', JavaExec) {
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = pluginTestClass
 	jvmArgs "-ea"
-	args "--developer-mode", "--debug"
+	args "--developer-mode"
 }
 
+tasks.register('runMain', JavaExec) {
+	classpath = sourceSets.main.runtimeClasspath
+	mainClass = pluginMainClass
+	jvmArgs "-ea"
+	args "--developer-mode"
+}
+
+// https://docs.gradle.org/8.10/javadoc/org/gradle/api/tasks/bundling/Jar.html
 tasks.register('shadowJar', Jar) {
 	dependsOn configurations.testRuntimeClasspath
 	manifest {
@@ -49,6 +69,8 @@ tasks.register('shadowJar', Jar) {
 	}
 
 	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+	// https://docs.gradle.org/8.10/javadoc/org/gradle/api/tasks/AbstractCopyTask.html#from(java.lang.Object...)
 	from sourceSets.main.output
 	from sourceSets.test.output
 	from {
@@ -63,7 +85,10 @@ tasks.register('shadowJar', Jar) {
 	exclude 'META-INF/*.RSA'
 	exclude '**/module-info.class'
 
-	group = BasePlugin.BUILD_GROUP
+	group = pluginJarGroup
+
+	// https://docs.gradle.org/8.10/javadoc/org/gradle/api/tasks/bundling/AbstractArchiveTask.html#getArchiveClassifier()
 	archiveClassifier.set('shadow')
-	archiveFileName.set("${rootProject.name}-${project.version}-all.jar")
+
+	archiveFileName.set(pluginJarName)
 }

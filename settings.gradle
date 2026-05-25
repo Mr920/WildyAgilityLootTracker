@@ -1,1 +1,2 @@
+// https://docs.gradle.org/8.10/javadoc/org/gradle/api/initialization/Settings.html
 rootProject.name = 'WildyAgilityLootTracker'
