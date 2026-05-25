@@ -5,12 +5,12 @@ plugins {
 }
 
 def pluginProjectVersion = '1.0.0'
-def pluginProjectName  = "${rootProject.name}"
+def pluginProjectName   = "${rootProject.name}"
 def pluginPackage        = 'com.lita'
 def pluginGroup          = pluginPackage
-def pluginMainClass    = "${pluginPackage}.${pluginProjectName}Plugin"
-def pluginTestClass    = "${pluginMainClass}Test"
-def pluginJarName      = "${pluginProjectName}-${pluginProjectVersion}-all.jar"
+def pluginMainClass     = "${pluginPackage}.${pluginProjectName}Plugin"
+def pluginTestClass     = "${pluginMainClass}Test"
+def pluginJarName       = "${pluginProjectName}-${pluginProjectVersion}-all.jar"
 def pluginJarGroup       = BasePlugin.BUILD_GROUP
 def runeLiteVersion      = 'latest.release'
 
