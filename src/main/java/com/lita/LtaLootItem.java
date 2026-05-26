@@ -7,8 +7,12 @@ public class LtaLootItem {
 
     // @@@@@ STATIC STUFF FIRST @@@@@
 
-    public static final String TYPE_SUPPLY = "Supply";
-    public static final String TYPE_ARMOUR = "Armour";
+    public static final String TYPE_SUPPLY  = "Supply";
+    public static final String TYPE_ARMOUR  = "Armour";
+    public static final int    TYPE_STEEL   = 1;
+    public static final int    TYPE_MITHRIL = 2;
+    public static final int    TYPE_ADAMANT = 3;
+    public static final int    TYPE_RUNE    = 4;
 
     public static int[] getSupplyItemIds(){
         return new int[] {
@@ -240,6 +244,14 @@ public class LtaLootItem {
     }
     public AsyncBufferedImage getQtyImage(){
         return WildyAgilityLootTrackerPlugin._ItemManager.getImage(this.id, this.haveQuantity, true);
+    }
+
+    public int getArmourType(){
+        if (isSteelArmour()){   return LtaLootItem.TYPE_STEEL;   }
+        if (isMithrilArmour()){ return LtaLootItem.TYPE_MITHRIL; }
+        if (isAdamantArmour()){ return LtaLootItem.TYPE_ADAMANT; }
+        if (isRuneArmour()){    return LtaLootItem.TYPE_RUNE;    }
+        return -1;
     }
 
 }

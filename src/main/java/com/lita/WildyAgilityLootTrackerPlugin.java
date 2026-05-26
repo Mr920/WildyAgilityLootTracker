@@ -191,11 +191,11 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
         return getMatchingLootItem(itemId, armour);
     }
 
-    public void onDataMutation(){
+    public void onDataMutation(LtaLootItem[] mutatedObjects){
 
         this.currentLootValStr = getTotalLootValueStr(); // by doing this here and now, we can cut down on string-formatting stuff happening in the OverlayPanel's render call
 
-        this.overlay.onDataMutation();  // ensure OverlayPanel's component structure only gets rebuilt when an awardMessage is actually detected and parsed
+        this.overlay.onDataMutation(mutatedObjects);  // ensure OverlayPanel's component structure only gets rebuilt when an awardMessage is actually detected and parsed
     }
 
     @Override
@@ -300,7 +300,7 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
         armourItem.haveQuantity += Qty;
         return armourItem;
     }
-    public void parseAwardMessage(String msg){
+    public LtaLootItem[] parseAwardMessage(String msg){
         Matcher _hm = highlightP.matcher(msg);
         LtaLootItem updatedSupplyItem = parseOut_SupplyItem(_hm);
         LtaLootItem updatedArmourItem = parseOut_ArmourItem(_hm);
@@ -308,6 +308,10 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
         log.info(String.format("Parsed & Updated [S] -> %s", updatedSupplyItem.toDebugString()));
         log.info(String.format("Parsed & Updated [A] -> %s", updatedArmourItem.toDebugString()));
         printCheckPointBanner();
+        return new LtaLootItem[] {
+                updatedSupplyItem,
+                updatedArmourItem
+        };
     }
     public int getTotalLootValue(){
         int total = 0;
@@ -340,8 +344,8 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
             //log.info(String.format("Game Message was: '%s'", msg));
             return false;
         }
-        parseAwardMessage(chatMessage);
-        onDataMutation();
+        LtaLootItem[] mutatedObjects = parseAwardMessage(chatMessage);
+        onDataMutation(mutatedObjects);
         return true;
     }
     public void updateLapCount(String msgMatchStr){
