@@ -84,24 +84,7 @@ import java.time.LocalDateTime;
 
 
 */
-/*      Items we care about: (not necessarily ordered in any deeply meaningful way)
-        
-        net.runelite.api.gameval
-            BLIGHTED_MANTARAY
-            BLIGHTED_ANGLERFISH
-            BLIGHTED_KARAMBWAN
-            BLIGHTED_4DOSE2RESTORE
-            STEEL_PLATEBODY
-            MITHRIL_PLATELEGS
-            MITHRIL_CHAINBODY
-            MITHRIL_PLATESKIRT
-            ADAMANT_FULL_HELM
-            ADAMANT_PLATEBODY
-            ADAMANT_PLATELEGS
-            RUNE_MED_HELM
-            RUNE_CHAINBODY
-            RUNE_KITESHIELD
-*/
+
 
 
 
@@ -143,19 +126,23 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
     public LocalDateTime currentSessionEndDt    = null;
     public           int currentStreak          = 0;
     public           int currentLap             = 0;
+    public        String currentLootValStr      = null;
 
 
     public void startSession(){
         this.currentSessionNum++;
         this.currentSessionStartDt = LocalDateTime.now();
+        log.info("Started Session " + Integer.toString(this.currentSessionNum, 10));
     }
     public void endSession(){
+        log.info("Ending session...");
         this.currentSessionEndDt = LocalDateTime.now();
         saveCurrentSession();
         clearCurrentState();
     }
     public void saveCurrentSession(){
         // to-do
+        log.info("To-Do : Implement saveCurrentSession()");
     }
     public void clearCurrentState(){
         this.currentStreak = 0;
@@ -177,8 +164,10 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
     }
 
     public void init_LootItems(){
+        log.info("Initializing LtaLootItem objects for supply and armour item tracking...");
         supplies   = LtaLootItem.getSupplyItems();
         armour     = LtaLootItem.getAllArmourItems();
+        log.info("Updating each LtaLootItem's display prop to match current config...");
         for (LtaLootItem supplyItem: supplies){
             supplyItem._detectIfConfigured(this.config);
         }
@@ -202,6 +191,13 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
         return getMatchingLootItem(itemId, armour);
     }
 
+    public void onDataMutation(){
+
+        this.currentLootValStr = getTotalLootValueStr(); // by doing this here and now, we can cut down on string-formatting stuff happening in the OverlayPanel's render call
+
+        this.overlay.onDataMutation();  // ensure OverlayPanel's component structure only gets rebuilt when an awardMessage is actually detected and parsed
+    }
+
     @Override
     protected void startUp() throws Exception
     {
@@ -216,17 +212,18 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
             log.info("__ItemManager is null");
         }
         else {
-            log.info(String.format("__ItemManager.toString() => %s", this.__ItemManager.toString()));
+            log.info(String.format("Got ItemManager@%s", Integer.toHexString(this.__ItemManager.hashCode()))); // toString() method uses reflection, which runelite dev practices discourage, so we do this instead
         }
 
         /* It doesn't feel right to throw this part in startup, given the io costs and such, but until I better learn the plugin event lifecycle, this will just have to do
            also if this is only called once, yet the user has a habit of logging in and out over and over again over time without relaunching runelite (*cough*, like you) then
            the price data could get stale, we should think about detecting price changes and config changes that occur after startup
         */
+        log.info("Deferring further initialization to run on the clientThread at a later time");
         clientThread.invokeLater(() -> {
-            init_LootItems();
+            //init_LootItems(); // let's defer this until even further in the lifecycle, after the first successful user login...
             startSession();
-            overlayManager.add(overlay);
+            // overlayManager.add(overlay); // let's defer this until even further in the lifecycle, after the first successful user login...
         });
     }
 
@@ -238,17 +235,32 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
     }
 
     public void reportRunning(){
-        String reportMessage = "WildyAgilityLootTrackerPlugin is running.";
+        String reportMessage = "WildyAgilityLootTrackerPlugin is running and ready.";
+        log.info(reportMessage);
+        log.info("deferring sending game message to occur at a later time on the client thread");
         clientThread.invokeLater(() -> {
-            log.info(reportMessage);
             client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", reportMessage, null);
         });
     }
+    public void finishInit(){
+        init_LootItems();
+        this.currentLootValStr = getTotalLootValueStr();
+        overlayManager.add(overlay);
+        reportRunning();
+    }
 
     public void onUserLogin(){
-        if ((! saidHi) && (this.client.getLocalPlayer() != null)){
-            reportRunning();
-            saidHi = true;
+        log.info("onUserLogin() => called");
+        if (! saidHi) {
+            clientThread.invokeLater(() -> {
+                if (this.client.getLocalPlayer() == null){ return false; }
+                else {
+                    log.info("User has logged in. Local player is not null. This is the first and only time this method should fire.");
+                    finishInit();
+                    return true;
+                }
+            });
+            saidHi = true; // since invokeLater will keep retrying, we can immediately act as if the call has been made and set it such that it won't try to call invokeLater again
         }
     }
 
@@ -329,6 +341,7 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
             return false;
         }
         parseAwardMessage(chatMessage);
+        onDataMutation();
         return true;
     }
     public void updateLapCount(String msgMatchStr){
@@ -382,5 +395,12 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
     }
 }
 
-// java -ea -jar "C:\runelite-plugin-devel\Wildy_Agility_Loot_Tracker\build\libs\WildyAgilityLootTracker-unspecified-all.jar" --developer-mode --debug
-// java -ea -jar "C:\runelite-plugin-devel\Wildy_Agility_Loot_Tracker\build\libs\WildyAgilityLootTracker-unspecified-all.jar" --developer-mode
+/*  Execution (because my dumbass forgets everything)
+
+        .\gradlew.bat runMain --info
+
+    later we can add a gradle exec task to run the shadowJar:
+
+        java -ea -jar "C:\runelite-plugin-devel\Wildy_Agility_Loot_Tracker\build\libs\WildyAgilityLootTracker-1.0.0-all.jar" --developer-mode --debug
+
+*/
