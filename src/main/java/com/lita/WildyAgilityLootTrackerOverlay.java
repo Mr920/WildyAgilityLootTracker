@@ -169,9 +169,11 @@ public class WildyAgilityLootTrackerOverlay extends OverlayPanel
 
 
     public void updateLootValueStr(){
+        log.info("updating Loot Value Title Component's text value...");
         this._lootValTitle.setText(this.plugin.currentLootValStr);
     }
     public void updateItemImage(PanelComponent itemRow, LtaLootItem mutatedItemObject){
+        log.info(String.format("updating component row with a new image for item -> %s", mutatedItemObject.name));
         List<LayoutableRenderableEntity> itemImages = itemRow.getChildren();
         for (LayoutableRenderableEntity itemImage: itemImages){
             if (((LtaLootItemImage) itemImage).targetLootItem.hashCode() == mutatedItemObject.hashCode()){
@@ -181,9 +183,11 @@ public class WildyAgilityLootTrackerOverlay extends OverlayPanel
         }
     }
     public void updateSupplyRow(LtaLootItem mutatedSupplyObj){
+        log.info("updating Supply row...");
         updateItemImage(this._supplyRow, mutatedSupplyObj);
     }
     public void updateArmourRow(LtaLootItem mutatedArmourObj){
+        log.info("updating Armour row...");
         PanelComponent armourRow = null;
         switch(mutatedArmourObj.getArmourType()){
             case LtaLootItem.TYPE_STEEL:   armourRow = this._steelRow;   break;
@@ -195,9 +199,11 @@ public class WildyAgilityLootTrackerOverlay extends OverlayPanel
         updateItemImage(armourRow, mutatedArmourObj);
     }
     public void updateComponents(LtaLootItem mutatedSupplyItem, LtaLootItem mutatedArmourItem){
+        log.info("Updating components...");
         updateSupplyRow(mutatedSupplyItem);
         updateArmourRow(mutatedArmourItem);
         updateLootValueStr();
+        log.info("All mutated items have had their corresponding components updated!");
     }
 
     /* Eventually we should move away from rebuilding UI object structures even when the data mutates
