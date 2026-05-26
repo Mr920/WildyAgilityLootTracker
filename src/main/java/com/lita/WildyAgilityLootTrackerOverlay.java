@@ -46,7 +46,7 @@ public class WildyAgilityLootTrackerOverlay extends OverlayPanel
     public void logRenderTiming(){
         long buildElapsed  = lastComponentBuildTime - reRenderScheduledTime;
         long renderElapsed = lastFrameDrawTime - lastComponentBuildTime;
-        log.info(String.format("Component Build completed %d ms after re-render scheduled, the render took an additional %d ms", buildElapsed, renderElapsed));
+        log.info(String.format("Component Build completed %d ms after re-render scheduled, the render took an additional %d ms\r\n", buildElapsed, renderElapsed));
     }
     public long getCurrentTimeMs(){
         return Instant.now().toEpochMilli();
@@ -203,7 +203,7 @@ public class WildyAgilityLootTrackerOverlay extends OverlayPanel
         updateSupplyRow(mutatedSupplyItem);
         updateArmourRow(mutatedArmourItem);
         updateLootValueStr();
-        log.info("All mutated items have had their corresponding components updated!");
+        log.info("All mutated items have had their corresponding components updated!\r\n");
     }
 
     /* Eventually we should move away from rebuilding UI object structures even when the data mutates

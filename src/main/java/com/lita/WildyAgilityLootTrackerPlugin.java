@@ -344,6 +344,7 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
             //log.info(String.format("Game Message was: '%s'", msg));
             return false;
         }
+        log.info("Received Game Message matching the award format pattern, proceeding to parse it out.");
         LtaLootItem[] mutatedObjects = parseAwardMessage(chatMessage);
         onDataMutation(mutatedObjects);
         return true;
