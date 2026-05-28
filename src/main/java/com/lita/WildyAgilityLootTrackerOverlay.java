@@ -46,7 +46,7 @@ public class WildyAgilityLootTrackerOverlay extends OverlayPanel
     public void logRenderTiming(){
         long buildElapsed  = lastComponentBuildTime - reRenderScheduledTime;
         long renderElapsed = lastFrameDrawTime - lastComponentBuildTime;
-        log.info(String.format("Component Build completed %d ms after re-render scheduled, the render took an additional %d ms\r\n", buildElapsed, renderElapsed));
+        log.debug(String.format("Component Build completed %d ms after re-render scheduled, the render took an additional %d ms\r\n", buildElapsed, renderElapsed));
     }
     public long getCurrentTimeMs(){
         return Instant.now().toEpochMilli();
@@ -54,7 +54,7 @@ public class WildyAgilityLootTrackerOverlay extends OverlayPanel
     public void scheduleReRender(){
         this.shouldReRender = true;
         this.reRenderScheduledTime = getCurrentTimeMs();
-        log.info("Scheduled Re-Render");
+        log.debug("Scheduled Re-Render");
     }
     public void markRenderComplete(){
         this.shouldReRender = false;
@@ -62,7 +62,7 @@ public class WildyAgilityLootTrackerOverlay extends OverlayPanel
         logRenderTiming();
     }
     public void onDataMutation(LtaLootItem[] mutatedObjects){
-        log.info("Data Mutation Detected");
+        log.debug("Data Mutation Detected");
         updateComponents(mutatedObjects[0], mutatedObjects[1]);
         // scheduleReRender(); // now that we are updating components, we should not still need to re-render everything
     }
@@ -155,25 +155,25 @@ public class WildyAgilityLootTrackerOverlay extends OverlayPanel
         this._childCmps.add(makeLootValTitleCmp());
     }
     public void buildComponents(){
-        log.info("Building Components...");
+        log.debug("Building Components...");
         configurePanelComponent();
         this._childCmps.clear();
         buildChildComponents();
         this.componentsBuildNum++;
     }
     public void rebuildComponents(){
-        if (this.componentsBuildNum > 0){ log.info("Re-creating component structures"); }
+        if (this.componentsBuildNum > 0){ log.debug("Re-creating component structures"); }
         buildComponents();
         this.lastComponentBuildTime = getCurrentTimeMs();
     }
 
 
     public void updateLootValueStr(){
-        log.info("updating Loot Value Title Component's text value...");
+        log.debug("updating Loot Value Title Component's text value...");
         this._lootValTitle.setText(this.plugin.currentLootValStr);
     }
     public void updateItemImage(PanelComponent itemRow, LtaLootItem mutatedItemObject){
-        log.info(String.format("updating component row with a new image for item -> %s", mutatedItemObject.name));
+        log.debug(String.format("updating component row with a new image for item -> %s", mutatedItemObject.name));
         List<LayoutableRenderableEntity> itemImages = itemRow.getChildren();
         for (LayoutableRenderableEntity itemImage: itemImages){
             if (((LtaLootItemImage) itemImage).targetLootItem.hashCode() == mutatedItemObject.hashCode()){
@@ -183,11 +183,11 @@ public class WildyAgilityLootTrackerOverlay extends OverlayPanel
         }
     }
     public void updateSupplyRow(LtaLootItem mutatedSupplyObj){
-        log.info("updating Supply row...");
+        log.debug("updating Supply row...");
         updateItemImage(this._supplyRow, mutatedSupplyObj);
     }
     public void updateArmourRow(LtaLootItem mutatedArmourObj){
-        log.info("updating Armour row...");
+        log.debug("updating Armour row...");
         PanelComponent armourRow = null;
         switch(mutatedArmourObj.getArmourType()){
             case LtaLootItem.TYPE_STEEL:   armourRow = this._steelRow;   break;
@@ -199,11 +199,11 @@ public class WildyAgilityLootTrackerOverlay extends OverlayPanel
         updateItemImage(armourRow, mutatedArmourObj);
     }
     public void updateComponents(LtaLootItem mutatedSupplyItem, LtaLootItem mutatedArmourItem){
-        log.info("Updating components...");
+        log.debug("Updating components...");
         updateSupplyRow(mutatedSupplyItem);
         updateArmourRow(mutatedArmourItem);
         updateLootValueStr();
-        log.info("All mutated items have had their corresponding components updated!\r\n");
+        log.debug("All mutated items have had their corresponding components updated!\r\n");
     }
 
     /* Eventually we should move away from rebuilding UI object structures even when the data mutates

@@ -132,17 +132,17 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
     public void startSession(){
         this.currentSessionNum++;
         this.currentSessionStartDt = LocalDateTime.now();
-        log.info("Started Session " + Integer.toString(this.currentSessionNum, 10));
+        log.debug("Started Session " + Integer.toString(this.currentSessionNum, 10));
     }
     public void endSession(){
-        log.info("Ending session...");
+        log.debug("Ending session...");
         this.currentSessionEndDt = LocalDateTime.now();
         saveCurrentSession();
         clearCurrentState();
     }
     public void saveCurrentSession(){
         // to-do
-        log.info("To-Do : Implement saveCurrentSession()");
+        log.debug("To-Do : Implement saveCurrentSession()");
     }
     public void clearCurrentState(){
         this.currentStreak = 0;
@@ -164,10 +164,10 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
     }
 
     public void init_LootItems(){
-        log.info("Initializing LtaLootItem objects for supply and armour item tracking...");
+        log.debug("Initializing LtaLootItem objects for supply and armour item tracking...");
         supplies   = LtaLootItem.getSupplyItems();
         armour     = LtaLootItem.getAllArmourItems();
-        log.info("Updating each LtaLootItem's display prop to match current config...");
+        log.debug("Updating each LtaLootItem's display prop to match current config...");
         for (LtaLootItem supplyItem: supplies){
             supplyItem._detectIfConfigured(this.config);
         }
@@ -201,7 +201,7 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
     @Override
     protected void startUp() throws Exception
     {
-        log.info("WildyAgilityLootTrackerPlugin started!");
+        log.debug("WildyAgilityLootTrackerPlugin started!");
         awardP        = Pattern.compile("You have been awarded");
         highlightP    = Pattern.compile("[<]col[=]ef1020[>]([^<]+)[<].col[>]");
         itemP         = Pattern.compile("([0-9]+) x (.+)");
@@ -209,17 +209,17 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
         lapCountP     = Pattern.compile("Wilderness Agility lap count is: .col=ff0000.([0-9]+)");
         WildyAgilityLootTrackerPlugin._ItemManager = this.__ItemManager;
         if (this.__ItemManager == null){
-            log.info("__ItemManager is null");
+            log.debug("__ItemManager is null");
         }
         else {
-            log.info(String.format("Got ItemManager@%s", Integer.toHexString(this.__ItemManager.hashCode()))); // toString() method uses reflection, which runelite dev practices discourage, so we do this instead
+            log.debug(String.format("Got ItemManager@%s", Integer.toHexString(this.__ItemManager.hashCode()))); // toString() method uses reflection, which runelite dev practices discourage, so we do this instead
         }
 
         /* It doesn't feel right to throw this part in startup, given the io costs and such, but until I better learn the plugin event lifecycle, this will just have to do
            also if this is only called once, yet the user has a habit of logging in and out over and over again over time without relaunching runelite (*cough*, like you) then
            the price data could get stale, we should think about detecting price changes and config changes that occur after startup
         */
-        log.info("Deferring further initialization to run on the clientThread at a later time");
+        log.debug("Deferring further initialization to run on the clientThread at a later time");
         clientThread.invokeLater(() -> {
             //init_LootItems(); // let's defer this until even further in the lifecycle, after the first successful user login...
             startSession();
@@ -231,13 +231,13 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
     protected void shutDown() throws Exception
     {
         endSession();
-        log.info("WildyAgilityLootTrackerPlugin stopped!");
+        log.debug("WildyAgilityLootTrackerPlugin stopped!");
     }
 
     public void reportRunning(){
         String reportMessage = "WildyAgilityLootTrackerPlugin is running and ready.";
-        log.info(reportMessage);
-        log.info("deferring sending game message to occur at a later time on the client thread");
+        log.debug(reportMessage);
+        log.debug("deferring sending game message to occur at a later time on the client thread");
         clientThread.invokeLater(() -> {
             client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", reportMessage, null);
         });
@@ -250,12 +250,12 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
     }
 
     public void onUserLogin(){
-        log.info("onUserLogin() => called");
+        log.debug("onUserLogin() => called");
         if (! saidHi) {
             clientThread.invokeLater(() -> {
                 if (this.client.getLocalPlayer() == null){ return false; }
                 else {
-                    log.info("User has logged in. Local player is not null. This is the first and only time this method should fire.");
+                    log.debug("User has logged in. Local player is not null. This is the first and only time this method should fire.");
                     finishInit();
                     return true;
                 }
@@ -274,10 +274,10 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
     }
 
     public int[] parseOut_LootItem(Matcher highlightMatcher){
-        if (! highlightMatcher.find()) { log.info("Failed to match highlight pattern"); return new int[] {1, 0}; } // i know this will bite me in the ass, I'll fix it later
+        if (! highlightMatcher.find()) { log.debug("Failed to match highlight pattern"); return new int[] {1, 0}; } // i know this will bite me in the ass, I'll fix it later
         String hStr = highlightMatcher.group(1);
         Matcher itemMatcher = itemP.matcher(hStr);
-        if (! itemMatcher.find()) { log.info("Failed to match item pattern"); return new int[] {1, 0}; }           // i know this will bite me in the ass, I'll fix it later
+        if (! itemMatcher.find()) { log.debug("Failed to match item pattern"); return new int[] {1, 0}; }           // i know this will bite me in the ass, I'll fix it later
         String QtyS  = itemMatcher.group(1);
         String ItemS = itemMatcher.group(2);
         int    ItemId = LtaLootItem.getItemIdFromName(ItemS);
@@ -304,7 +304,7 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
         Matcher _hm = highlightP.matcher(msg);
         LtaLootItem updatedSupplyItem = parseOut_SupplyItem(_hm);
         LtaLootItem updatedArmourItem = parseOut_ArmourItem(_hm);
-        //log.info(String.format("Parsed -> (Supply : Qty=%s , Name=%s) : (Armour : Qty=%s, Name=%s)", supplyQtyS, supplyItemS, armourQtyS, armourItemS));
+        //log.debug(String.format("Parsed -> (Supply : Qty=%s , Name=%s) : (Armour : Qty=%s, Name=%s)", supplyQtyS, supplyItemS, armourQtyS, armourItemS));
         log.info(String.format("Parsed & Updated [S] -> %s", updatedSupplyItem.toDebugString()));
         log.info(String.format("Parsed & Updated [A] -> %s", updatedArmourItem.toDebugString()));
         printCheckPointBanner();
@@ -340,11 +340,11 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
     public boolean checkIsAwardMessage(String chatMessage){
         Matcher  _m = awardP.matcher(chatMessage);
         if (! _m.find()){
-            //log.info("Game Message does not match the award text pattern");
-            //log.info(String.format("Game Message was: '%s'", msg));
+            //log.debug("Game Message does not match the award text pattern");
+            //log.debug(String.format("Game Message was: '%s'", msg));
             return false;
         }
-        log.info("Received Game Message matching the award format pattern, proceeding to parse it out.");
+        log.debug("Received Game Message matching the award format pattern, proceeding to parse it out.");
         LtaLootItem[] mutatedObjects = parseAwardMessage(chatMessage);
         onDataMutation(mutatedObjects);
         return true;
@@ -375,7 +375,7 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
     */
     @Subscribe
     public void onChatMessage(ChatMessage cMsgEvent){
-        // log.info("WildyAgilityLootTrackerPlugin->onChatMessage()");
+        // log.debug("WildyAgilityLootTrackerPlugin->onChatMessage()");
         if (cMsgEvent.getType() == ChatMessageType.GAMEMESSAGE){
             String  msg = cMsgEvent.getMessage();
             if (checkIsLapCountMessage(msg)){ return; }
