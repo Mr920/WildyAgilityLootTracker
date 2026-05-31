@@ -206,6 +206,11 @@ public class WildyAgilityLootTrackerOverlay extends OverlayPanel
         log.debug("All mutated items have had their corresponding components updated!\r\n");
     }
 
+    public void onShutdown(){
+        this.panelComponent.getChildren().clear();
+        this.shouldReRender = true;
+    }
+
     /* Eventually we should move away from rebuilding UI object structures even when the data mutates
        There's no need to rebuild everything. We could get away with merely replacing the updated object sprites
        and replacing the final text component's text.

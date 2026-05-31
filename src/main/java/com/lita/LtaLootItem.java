@@ -14,6 +14,7 @@ public class LtaLootItem {
     public static final int    TYPE_ADAMANT = 3;
     public static final int    TYPE_RUNE    = 4;
 
+
     public static int[] getSupplyItemIds(){
         return new int[] {
                 ItemID.BLIGHTED_ANGLERFISH,
@@ -223,6 +224,10 @@ public class LtaLootItem {
             if (this.isAdamantArmour()){ this.display = configObject.getShowAdamantArmour(); return; }
             if (this.isRuneArmour()){    this.display = configObject.getShowRuneArmour();    return; }
         }
+    }
+
+    public void updateItemPrice(){
+        this.price = getItemPrice(this.id);
     }
 
     public String toSmallGpStr(int value){

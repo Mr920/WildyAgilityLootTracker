@@ -16,10 +16,11 @@ import net.runelite.client.externalplugins.ExternalPluginManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.game.ItemManager;
-import net.runelite.client.util.AsyncBufferedImage;
-import net.runelite.api.gameval.ItemID;
-import net.runelite.client.callback.ClientThread;
 import net.runelite.client.ui.overlay.OverlayManager;
+
+// I feel weird about removing these imports completely until I prove to myself that all references have been removed
+// import net.runelite.client.util.AsyncBufferedImage;
+// import net.runelite.api.gameval.ItemID;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -191,6 +192,15 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
         return getMatchingLootItem(itemId, armour);
     }
 
+    public void updateItemPrices(){
+        for (LtaLootItem sItm: this.supplies){
+            sItm.updateItemPrice();
+        }
+        for (LtaLootItem aItm: this.armour){
+            aItm.updateItemPrice();
+        }
+    }
+
     public void onDataMutation(LtaLootItem[] mutatedObjects){
 
         this.currentLootValStr = getTotalLootValueStr(); // by doing this here and now, we can cut down on string-formatting stuff happening in the OverlayPanel's render call
@@ -231,6 +241,7 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
     protected void shutDown() throws Exception
     {
         endSession();
+        this.overlay.onShutdown();
         log.debug("WildyAgilityLootTrackerPlugin stopped!");
     }
 
@@ -366,6 +377,9 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
         Matcher _matcher = rewardStreakP.matcher(chatMessage);
         if (! _matcher.find()){ return false; }
         updateStreak(_matcher.group(1));
+        if ((this.currentStreak % 20) == 0){
+            updateItemPrices();
+        }
         return true;
     }
 
