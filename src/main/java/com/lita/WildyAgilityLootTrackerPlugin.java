@@ -224,7 +224,7 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
         else {
             log.debug(String.format("Got ItemManager@%s", Integer.toHexString(this.__ItemManager.hashCode()))); // toString() method uses reflection, which runelite dev practices discourage, so we do this instead
         }
-
+        if (this.overlay.isShutDown){ this.overlay.isShutDown = false; }
         /* It doesn't feel right to throw this part in startup, given the io costs and such, but until I better learn the plugin event lifecycle, this will just have to do
            also if this is only called once, yet the user has a habit of logging in and out over and over again over time without relaunching runelite (*cough*, like you) then
            the price data could get stale, we should think about detecting price changes and config changes that occur after startup

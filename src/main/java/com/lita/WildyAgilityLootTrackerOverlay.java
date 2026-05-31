@@ -34,6 +34,7 @@ public class WildyAgilityLootTrackerOverlay extends OverlayPanel
     public int  componentsBuildNum     = 0;
 
     public boolean shouldReRender      = false;
+    public boolean isShutDown          = false;
 
     public List<LayoutableRenderableEntity> _childCmps    = null;
     public PanelComponent                   _supplyRow    = null;
@@ -209,6 +210,7 @@ public class WildyAgilityLootTrackerOverlay extends OverlayPanel
     public void onShutdown(){
         this.panelComponent.getChildren().clear();
         this.shouldReRender = true;
+        this.isShutDown     = true;
     }
 
     /* Eventually we should move away from rebuilding UI object structures even when the data mutates
@@ -220,7 +222,7 @@ public class WildyAgilityLootTrackerOverlay extends OverlayPanel
     */
     @Override
     public Dimension render(Graphics2D graphics){
-        if (this.shouldReRender){
+        if (this.shouldReRender && (!this.isShutDown)){
             rebuildComponents();
             Dimension renderedDimension = super.render(graphics);
             markRenderComplete();
