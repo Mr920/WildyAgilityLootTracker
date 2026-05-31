@@ -242,6 +242,7 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
     {
         endSession();
         this.overlay.onShutdown();
+        this.saidHi = false;
         log.debug("WildyAgilityLootTrackerPlugin stopped!");
     }
 
