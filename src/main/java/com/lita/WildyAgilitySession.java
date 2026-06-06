@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 @Slf4j
 public class WildyAgilitySession {
 
+   private static int                 _ID     = 0;
     public static WildyAgilitySession current = null;
     public static WildyAgilitySession last    = null;
 
@@ -24,8 +25,8 @@ public class WildyAgilitySession {
     }
 
     public static WildyAgilitySession getNew(WildyAgilityLootTrackerPlugin _plugin){ return new WildyAgilitySession(_plugin); }
-    public static int getNewID(WildyAgilityLootTrackerPlugin _plugin){
-        return getLast(_plugin).num + 1;
+    public static int getNewID(){
+        return _ID++;
     }
 
     public WildyAgilityLootTrackerPlugin plugin;
@@ -39,7 +40,7 @@ public class WildyAgilitySession {
 
     public WildyAgilitySession(WildyAgilityLootTrackerPlugin _plugin){
         this.plugin = _plugin;
-        this.num = getNewID(this.plugin);
+        this.num = getNewID();
         if (WildyAgilitySession.current == null){
             WildyAgilitySession.current = this;
         }
