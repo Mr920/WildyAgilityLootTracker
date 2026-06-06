@@ -68,10 +68,10 @@ public class LtaLootItem {
 
     /* Doing some method wrappers for my own convenience */
     public static int getItemPrice(int itemID){
-        return WildyAgilityLootTrackerPlugin._ItemManager.getItemPrice(itemID);
+        return WildyAgilityLootTrackerPlugin.ItemManager.getItemPrice(itemID);
     }
     public static AsyncBufferedImage getImage(int itemID){
-        return WildyAgilityLootTrackerPlugin._ItemManager.getImage(itemID);
+        return WildyAgilityLootTrackerPlugin.ItemManager.getImage(itemID);
     }
 
     public static String getItemName(int itemID){
@@ -248,7 +248,7 @@ public class LtaLootItem {
         return String.format("LtaLootItem[id=%06d]{ T: %s | N: %-27s | %4d * %s | %s }", this.id, this.type, this.name, this.haveQuantity, getPriceGpStr(), getTotalGpStr());
     }
     public AsyncBufferedImage getQtyImage(){
-        return WildyAgilityLootTrackerPlugin._ItemManager.getImage(this.id, this.haveQuantity, true);
+        return WildyAgilityLootTrackerPlugin.ItemManager.getImage(this.id, this.haveQuantity, true);
     }
 
     public int getArmourType(){

@@ -25,6 +25,7 @@ public class WildyAgilityLootTrackerOverlay extends OverlayPanel
 {
     private final WildyAgilityLootTrackerPlugin plugin;
     private final WildyAgilityLootTrackerConfig config;
+
     private final int STANDARD_INVENTORY_ITEM_WIDTH  = 32;
     private final int STANDARD_INVENTORY_ITEM_HEIGHT = 32;
 
@@ -33,7 +34,7 @@ public class WildyAgilityLootTrackerOverlay extends OverlayPanel
     public long lastFrameDrawTime      = 0;
     public int  componentsBuildNum     = 0;
 
-    public boolean shouldReRender      = false;
+    public boolean shouldReRender      = false; // probably going to deprecate this soon
     public boolean isShutDown          = false;
 
     public List<LayoutableRenderableEntity> _childCmps    = null;
@@ -71,6 +72,8 @@ public class WildyAgilityLootTrackerOverlay extends OverlayPanel
     @Inject
     private WildyAgilityLootTrackerOverlay(WildyAgilityLootTrackerPlugin _plugin, WildyAgilityLootTrackerConfig _config){
         super(_plugin);
+        this.plugin = _plugin;
+        this.config = _config;
         setPosition(OverlayPosition.TOP_LEFT);
         /*
             setClearChildren(false) is necessary for giving this thing object-caching abilities which will help cut down
@@ -87,10 +90,8 @@ public class WildyAgilityLootTrackerOverlay extends OverlayPanel
             it looks like this is saving about 23 ms of real-world execution time PER FRAME in my little test
         */
         setClearChildren(false);
-        this.plugin = _plugin;
-        this.config = _config;
-        scheduleReRender();
-        addMenuEntry(RUNELITE_OVERLAY_CONFIG, OPTION_CONFIGURE, "WildyAgilityLootTrackerPlugin overlay");
+        //scheduleReRender();
+        //addMenuEntry(RUNELITE_OVERLAY_CONFIG, OPTION_CONFIGURE, "WildyAgilityLootTrackerPlugin overlay");
     }
 
     public PanelComponent makeSupplyRow(){
@@ -161,11 +162,11 @@ public class WildyAgilityLootTrackerOverlay extends OverlayPanel
         this._childCmps.clear();
         buildChildComponents();
         this.componentsBuildNum++;
+        this.lastComponentBuildTime = getCurrentTimeMs();
     }
     public void rebuildComponents(){
         if (this.componentsBuildNum > 0){ log.debug("Re-creating component structures"); }
         buildComponents();
-        this.lastComponentBuildTime = getCurrentTimeMs();
     }
 
 
@@ -208,9 +209,17 @@ public class WildyAgilityLootTrackerOverlay extends OverlayPanel
     }
 
     public void onShutdown(){
+        log.debug("onShutDown()");
         this.panelComponent.getChildren().clear();
-        this.shouldReRender = true;
+        this.plugin.overlayManager.remove(this);
+        //this.shouldReRender = true;
         this.isShutDown     = true;
+    }
+    public void onStartUp(){
+        log.debug("onStartUp()");
+        if (this.isShutDown){ this.isShutDown = false; }
+        buildComponents();
+        this.plugin.overlayManager.add(this);
     }
 
     /* Eventually we should move away from rebuilding UI object structures even when the data mutates
@@ -222,6 +231,15 @@ public class WildyAgilityLootTrackerOverlay extends OverlayPanel
     */
     @Override
     public Dimension render(Graphics2D graphics){
+        /*
+            So I'm realizing there's virtually never any reason to do anything within the render method except call parent's render
+            All "component logic" can be done in response to initialization or data mutation events, and will simply get picked up
+            on the next call to render
+
+            But there's no reason it has to be done within a render call, not even occasionally
+        */
+        return super.render(graphics);
+        /*
         if (this.shouldReRender && (!this.isShutDown)){
             rebuildComponents();
             Dimension renderedDimension = super.render(graphics);
@@ -231,6 +249,7 @@ public class WildyAgilityLootTrackerOverlay extends OverlayPanel
         else {
             return super.render(graphics);
         }
+        */
     }
 
 

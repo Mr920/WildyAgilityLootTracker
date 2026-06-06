@@ -12,6 +12,7 @@ import net.runelite.client.RuneLite;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.externalplugins.ExternalPluginManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
@@ -97,6 +98,8 @@ import java.time.LocalDateTime;
 public class WildyAgilityLootTrackerPlugin extends Plugin
 {
 
+    public static ItemManager ItemManager;
+
     public LtaLootItem[] supplies;
     public LtaLootItem[] armour;
 
@@ -105,22 +108,22 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
     public Pattern itemP;
     public Pattern rewardStreakP;
     public Pattern lapCountP;
-    public boolean saidHi = false;
+    public boolean firstUserLoginInit = false;
 
-    public static ItemManager _ItemManager;
+
 
     @Inject
-    private Client client;
+    private Client                         client;
     @Inject
-    private ClientThread clientThread;
+    private ClientThread                   clientThread;
     @Inject
-    private WildyAgilityLootTrackerConfig config;
+    private WildyAgilityLootTrackerConfig  config;
     @Inject
-    private ItemManager __ItemManager;
+    private ItemManager                    __ItemManager;
     @Inject
-    private OverlayManager overlayManager;
+    public  OverlayManager                 overlayManager;
     @Inject
-    private WildyAgilityLootTrackerOverlay overlay;
+    public  WildyAgilityLootTrackerOverlay overlay;
 
     public           int currentSessionNum      = 0; // this is for the future, but won't be reliable until later
     public LocalDateTime currentSessionStartDt  = null;
@@ -176,6 +179,25 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
             armourItem._detectIfConfigured(this.config);
         }
     }
+
+    public void init_Patterns(){
+        awardP        = Pattern.compile("You have been awarded");
+        highlightP    = Pattern.compile("[<]col[=]ef1020[>]([^<]+)[<].col[>]");
+        itemP         = Pattern.compile("([0-9]+) x (.+)");
+        rewardStreakP = Pattern.compile("Wilderness Agility reward streak is: .col=ff0000.([0-9]+)");
+        lapCountP     = Pattern.compile("Wilderness Agility lap count is: .col=ff0000.([0-9]+)");
+    }
+
+    public void init_ItemManager(){
+        WildyAgilityLootTrackerPlugin.ItemManager = this.__ItemManager;
+        if (this.__ItemManager == null){
+            log.debug("__ItemManager is null");
+        }
+        else {
+            log.debug(String.format("Got ItemManager@%s", Integer.toHexString(this.__ItemManager.hashCode()))); // toString() method uses reflection, which runelite dev practices discourage, so we do this instead
+        }
+    }
+
     public LtaLootItem getMatchingLootItem(int itemId, LtaLootItem[] searchList){
                 int index         = 0;
         LtaLootItem matchedObject = null;
@@ -212,37 +234,25 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
     protected void startUp() throws Exception
     {
         log.debug("WildyAgilityLootTrackerPlugin started!");
-        awardP        = Pattern.compile("You have been awarded");
-        highlightP    = Pattern.compile("[<]col[=]ef1020[>]([^<]+)[<].col[>]");
-        itemP         = Pattern.compile("([0-9]+) x (.+)");
-        rewardStreakP = Pattern.compile("Wilderness Agility reward streak is: .col=ff0000.([0-9]+)");
-        lapCountP     = Pattern.compile("Wilderness Agility lap count is: .col=ff0000.([0-9]+)");
-        WildyAgilityLootTrackerPlugin._ItemManager = this.__ItemManager;
-        if (this.__ItemManager == null){
-            log.debug("__ItemManager is null");
+        init_Patterns();
+        init_ItemManager();
+        startSession();
+        if (firstUserLoginInit){
+            // this covers the situation in which the plugin has been turned off and then back on within a single user play session
+            log.debug("Not this plugin's first startup, finishing initialization now...");
+            finishInit();
         }
         else {
-            log.debug(String.format("Got ItemManager@%s", Integer.toHexString(this.__ItemManager.hashCode()))); // toString() method uses reflection, which runelite dev practices discourage, so we do this instead
+            log.debug("This is the plugin's first startup, deferring finishInit() until onUserLogin() has been called");
         }
-        if (this.overlay.isShutDown){ this.overlay.isShutDown = false; }
-        /* It doesn't feel right to throw this part in startup, given the io costs and such, but until I better learn the plugin event lifecycle, this will just have to do
-           also if this is only called once, yet the user has a habit of logging in and out over and over again over time without relaunching runelite (*cough*, like you) then
-           the price data could get stale, we should think about detecting price changes and config changes that occur after startup
-        */
-        log.debug("Deferring further initialization to run on the clientThread at a later time");
-        clientThread.invokeLater(() -> {
-            //init_LootItems(); // let's defer this until even further in the lifecycle, after the first successful user login...
-            startSession();
-            // overlayManager.add(overlay); // let's defer this until even further in the lifecycle, after the first successful user login...
-        });
     }
 
     @Override
     protected void shutDown() throws Exception
     {
         endSession();
+        //this.firstUserLoginInit = false;
         this.overlay.onShutdown();
-        this.saidHi = false;
         log.debug("WildyAgilityLootTrackerPlugin stopped!");
     }
 
@@ -255,34 +265,49 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
         });
     }
     public void finishInit(){
-        init_LootItems();
-        this.currentLootValStr = getTotalLootValueStr();
-        overlayManager.add(overlay);
-        reportRunning();
+        this.clientThread.invoke(() -> {
+            init_LootItems();
+            this.currentLootValStr = getTotalLootValueStr();
+            reportRunning();
+            this.overlay.onStartUp();
+        });
     }
+
+    //public void
 
     public void onUserLogin(){
         log.debug("onUserLogin() => called");
-        if (! saidHi) {
+        if (! firstUserLoginInit) {
             clientThread.invokeLater(() -> {
-                if (this.client.getLocalPlayer() == null){ return false; }
+                if (this.client.getLocalPlayer() == null){ return false; } //dont actually need the player, just need to know client has reached this point in initialization/lifecycle
                 else {
                     log.debug("User has logged in. Local player is not null. This is the first and only time this method should fire.");
                     finishInit();
                     return true;
                 }
             });
-            saidHi = true; // since invokeLater will keep retrying, we can immediately act as if the call has been made and set it such that it won't try to call invokeLater again
+            firstUserLoginInit = true; // since invokeLater will keep retrying, we can immediately act as if the call has been made and set it such that it won't try to call invokeLater again
         }
     }
 
     @Subscribe
     public void onGameStateChanged(GameStateChanged gameStateChanged)
     {
-        if (gameStateChanged.getGameState() == GameState.LOGGED_IN)
-        {
-            onUserLogin();
+        switch( gameStateChanged.getGameState() ){
+            case CONNECTION_LOST:            log.debug("GameState.CONNECTION_LOST");                             break;
+            case HOPPING:                    log.debug("GameState.HOPPING");                                     break;
+            case LOADING:                    log.debug("GameState.LOADING");                                     break;
+            case LOGGED_IN:                  log.debug("GameState.LOGGED_IN"); onUserLogin();                    break;
+            case LOGGING_IN:                 log.debug("GameState.LOGGING_IN");                                  break;
+            case LOGIN_SCREEN:               log.debug("GameState.LOGIN_SCREEN");                                break;
+            case LOGIN_SCREEN_AUTHENTICATOR: log.debug("GameState.LOGIN_SCREEN_AUTHENTICATOR");                  break;
+            case STARTING:                   log.debug("GameState.STARTING");                                    break;
+            case UNKNOWN:                    log.debug("GameState.UNKNOWN");                                     break;
         }
+    }
+    @Subscribe
+    public void onConfigChanged(ConfigChanged cfgEvent){
+
     }
 
     public int[] parseOut_LootItem(Matcher highlightMatcher){

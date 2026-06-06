@@ -60,7 +60,7 @@ tasks.register('runTest', JavaExec) {
 tasks.register('runMain', JavaExec) {
 	classpath = sourceSets.main.runtimeClasspath
 	mainClass = pluginMainClass
-	jvmArgs "-ea"
+	jvmArgs "-ea", "-Dlogback.configurationFile=src/main/resources/logback.xml"
 	args "--developer-mode"
 }
 
