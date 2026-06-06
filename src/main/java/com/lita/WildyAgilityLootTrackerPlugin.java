@@ -5,7 +5,9 @@ import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
+import net.runelite.api.coords.WorldArea;
 import net.runelite.api.GameState;
+import net.runelite.api.events.ClientTick;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.client.RuneLite;
@@ -18,11 +20,6 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.overlay.OverlayManager;
-
-// I feel weird about removing these imports completely until I prove to myself that all references have been removed
-// import net.runelite.client.util.AsyncBufferedImage;
-// import net.runelite.api.gameval.ItemID;
-
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.time.LocalDateTime;
@@ -64,18 +61,19 @@ import java.time.LocalDateTime;
                 Keep track of streak and lap info?
 
 
-
+*/
+/*
     To-Do:
-        - Figure out why the client occasionally crashes, I suspect this still has something to do with trying to call that init_LootItems() in the Plugin's main startUp()
         - Make this thing respect the config
         - Session Management, complete with the ability to preserve historical information on the loot item quantities and prices from previous sessions
-        - Make the visual Overlay
+        - Make visual overlay configurable/switchable to Swing-based Side Panel
         - Give user's a "clear session" button
         - Detect when user enters or leaves agility arena
         - Detect logouts / logins
         - Give users the ability to override the estimated item prices in the config; This will be on a per-session basis, with the default behavior still being to pull them from the client API at the start of a new session
         - Maybe show additional statistics like the most recent bag-value-increase amount, maybe show an average rate of increase as well
-
+*/
+/*
     Client Events we should probably be listening to:
         ClientShutdown
         ConfigChanged
@@ -98,79 +96,41 @@ import java.time.LocalDateTime;
 public class WildyAgilityLootTrackerPlugin extends Plugin
 {
 
-    public static ItemManager ItemManager;
+            public static final int      GAME_AREA_CLIENT_TICK_EVERY =  25; // half a second
+            public static final int      PLUGIN_CHECK_READY_EVERY    = 100; // about 2 seconds
+            public static ItemManager    ItemManager;
 
-    public LtaLootItem[] supplies;
-    public LtaLootItem[] armour;
-
-    public Pattern awardP;
-    public Pattern highlightP;
-    public Pattern itemP;
-    public Pattern rewardStreakP;
-    public Pattern lapCountP;
-    public boolean firstUserLoginInit = false;
-
-
-
-    @Inject
-    private Client                         client;
-    @Inject
-    private ClientThread                   clientThread;
-    @Inject
-    private WildyAgilityLootTrackerConfig  config;
-    @Inject
-    private ItemManager                    __ItemManager;
-    @Inject
-    public  OverlayManager                 overlayManager;
-    @Inject
-    public  WildyAgilityLootTrackerOverlay overlay;
-
-    public           int currentSessionNum      = 0; // this is for the future, but won't be reliable until later
-    public LocalDateTime currentSessionStartDt  = null;
-    public LocalDateTime currentSessionEndDt    = null;
-    public           int currentStreak          = 0;
-    public           int currentLap             = 0;
-    public        String currentLootValStr      = null;
+            public  boolean                        firstUserLoginInit     = false;
+            public  boolean                        playerFirstLoad        = false;
+            public  boolean                        running                = false;
+    @Inject public  Client                         client;
+    @Inject public  ClientThread                   clientThread;
+    @Inject public  WildyAgilityLootTrackerConfig  config;
+    @Inject public  ItemManager                    itemManager;
+    @Inject public  OverlayManager                 overlayManager;
+    @Inject public  WildyAgilityLootTrackerOverlay overlay;
+            public  WildyAgilitySession            currentSession         = null;
+            public  WildyAgilityChatParser         chatParser             = null;
+            public  WildyAgilityGameArea           activeGameZone         = null;
+            public  WildyAgilityDebugHelper        debugHelper            = null;
+            public  LtaLootItem[]                  supplies;
+            public  LtaLootItem[]                  armour;
+            public  String                         currentLootValStr      = null;
+           private  int                            clientTickNum          = 0;
 
 
-    public void startSession(){
-        this.currentSessionNum++;
-        this.currentSessionStartDt = LocalDateTime.now();
-        log.debug("Started Session " + Integer.toString(this.currentSessionNum, 10));
-    }
-    public void endSession(){
-        log.debug("Ending session...");
-        this.currentSessionEndDt = LocalDateTime.now();
-        saveCurrentSession();
-        clearCurrentState();
-    }
-    public void saveCurrentSession(){
-        // to-do
-        log.debug("To-Do : Implement saveCurrentSession()");
-    }
+    public void startSession(){       this.currentSession.start();     }
+    public void endSession(){         this.currentSession.end(); clearCurrentState();     }
+    public void saveCurrentSession(){ this.currentSession.save();    }
     public void clearCurrentState(){
-        this.currentStreak = 0;
-        this.currentLap    = 0;
-        this.supplies      = null;
-        this.armour        = null;
-        //init_LootItems();
-        //startSession();
+        this.currentSession = null;
+        this.supplies       = null;
+        this.armour         = null;
     }
-    public void debug_LogCurrentItems(){
-        log.info("===== Supplies =====");
-        for (LtaLootItem supplyItem: supplies){
-            log.info(supplyItem.toDebugString());
-        }
-        log.info("===== Armour   =====");
-        for (LtaLootItem armourItem: armour){
-            log.info(armourItem.toDebugString());
-        }
-    }
-
     public void init_LootItems(){
         log.debug("Initializing LtaLootItem objects for supply and armour item tracking...");
-        supplies   = LtaLootItem.getSupplyItems();
-        armour     = LtaLootItem.getAllArmourItems();
+        this.supplies   = LtaLootItem.getSupplyItems();
+        this.armour     = LtaLootItem.getAllArmourItems();
         log.debug("Updating each LtaLootItem's display prop to match current config...");
         for (LtaLootItem supplyItem: supplies){
             supplyItem._detectIfConfigured(this.config);
@@ -179,23 +139,19 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
             armourItem._detectIfConfigured(this.config);
         }
     }
+    public void startInit(){
+        this.currentSession = new WildyAgilitySession(this);
+        this.chatParser     = new WildyAgilityChatParser(this);
+        this.activeGameZone = new WildyAgilityGameArea(this);
+        this.debugHelper    = new WildyAgilityDebugHelper(this);
+        WildyAgilityLootTrackerPlugin.ItemManager = this.itemManager;
 
-    public void init_Patterns(){
-        awardP        = Pattern.compile("You have been awarded");
-        highlightP    = Pattern.compile("[<]col[=]ef1020[>]([^<]+)[<].col[>]");
-        itemP         = Pattern.compile("([0-9]+) x (.+)");
-        rewardStreakP = Pattern.compile("Wilderness Agility reward streak is: .col=ff0000.([0-9]+)");
-        lapCountP     = Pattern.compile("Wilderness Agility lap count is: .col=ff0000.([0-9]+)");
     }
-
-    public void init_ItemManager(){
-        WildyAgilityLootTrackerPlugin.ItemManager = this.__ItemManager;
-        if (this.__ItemManager == null){
-            log.debug("__ItemManager is null");
-        }
-        else {
-            log.debug(String.format("Got ItemManager@%s", Integer.toHexString(this.__ItemManager.hashCode()))); // toString() method uses reflection, which runelite dev practices discourage, so we do this instead
-        }
+    public void finishInit(){
+        this.clientThread.invoke(() -> {
+            init_LootItems();
+            this.currentLootValStr = getTotalLootValueStr();
+        });
     }
 
     public LtaLootItem getMatchingLootItem(int itemId, LtaLootItem[] searchList){
@@ -207,26 +163,19 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
         }
         return matchedObject;
     }
-    public LtaLootItem getMatchingSupplyItem(int itemId){
-        return getMatchingLootItem(itemId, supplies);
-    }
-    public LtaLootItem getMatchingArmourItem(int itemId){
-        return getMatchingLootItem(itemId, armour);
-    }
+    public LtaLootItem getMatchingSupplyItem(int itemId){ return getMatchingLootItem(itemId, supplies); }
+    public LtaLootItem getMatchingArmourItem(int itemId){ return getMatchingLootItem(itemId, armour);   }
 
+    public void updateLootItemPrices(LtaLootItem[] items){
+        for (LtaLootItem itm: items){ itm.updateItemPrice(); }
+    }
     public void updateItemPrices(){
-        for (LtaLootItem sItm: this.supplies){
-            sItm.updateItemPrice();
-        }
-        for (LtaLootItem aItm: this.armour){
-            aItm.updateItemPrice();
-        }
+        updateLootItemPrices(this.supplies);
+        updateLootItemPrices(this.armour);
     }
 
     public void onDataMutation(LtaLootItem[] mutatedObjects){
-
         this.currentLootValStr = getTotalLootValueStr(); // by doing this here and now, we can cut down on string-formatting stuff happening in the OverlayPanel's render call
-
         this.overlay.onDataMutation(mutatedObjects);  // ensure OverlayPanel's component structure only gets rebuilt when an awardMessage is actually detected and parsed
     }
 
@@ -234,60 +183,61 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
     protected void startUp() throws Exception
     {
         log.debug("WildyAgilityLootTrackerPlugin started!");
-        init_Patterns();
-        init_ItemManager();
-        startSession();
-        if (firstUserLoginInit){
-            // this covers the situation in which the plugin has been turned off and then back on within a single user play session
-            log.debug("Not this plugin's first startup, finishing initialization now...");
-            finishInit();
-        }
-        else {
-            log.debug("This is the plugin's first startup, deferring finishInit() until onUserLogin() has been called");
-        }
+        startInit();
+        finishInit();
+        checkReadyToRun();
     }
 
     @Override
     protected void shutDown() throws Exception
     {
+        this.running = false;
         endSession();
-        //this.firstUserLoginInit = false;
         this.overlay.onShutdown();
         log.debug("WildyAgilityLootTrackerPlugin stopped!");
     }
 
-    public void reportRunning(){
-        String reportMessage = "WildyAgilityLootTrackerPlugin is running and ready.";
-        log.debug(reportMessage);
-        log.debug("deferring sending game message to occur at a later time on the client thread");
-        clientThread.invokeLater(() -> {
-            client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", reportMessage, null);
-        });
+
+
+
+    public boolean detectPlayerInZone(){
+        return this.activeGameZone.isPlayerInZone();
     }
-    public void finishInit(){
-        this.clientThread.invoke(() -> {
-            init_LootItems();
-            this.currentLootValStr = getTotalLootValueStr();
-            reportRunning();
-            this.overlay.onStartUp();
-        });
+    public boolean isUserReady(){
+        return playerFirstLoad && this.currentSession.isActive();
+    }
+    public void onUserReady(){
+        log.debug("onUserReady()");
+        startRunning();
     }
 
-    //public void
+    public boolean checkReadyToRun(){
+        if (! isUserReady()){ return false; }
+        if (! detectPlayerInZone()){ return false; }
+        onUserReady();
+        return true;
+    }
 
     public void onUserLogin(){
-        log.debug("onUserLogin() => called");
+        log.debug("onUserLogin()");
         if (! firstUserLoginInit) {
             clientThread.invokeLater(() -> {
                 if (this.client.getLocalPlayer() == null){ return false; } //dont actually need the player, just need to know client has reached this point in initialization/lifecycle
                 else {
                     log.debug("User has logged in. Local player is not null. This is the first and only time this method should fire.");
-                    finishInit();
+                    playerFirstLoad = true;
                     return true;
                 }
             });
             firstUserLoginInit = true; // since invokeLater will keep retrying, we can immediately act as if the call has been made and set it such that it won't try to call invokeLater again
         }
+    }
+
+    public void startRunning(){
+        log.debug("startRunning()");
+        this.running = true;
+        this.debugHelper.reportRunning();
+        this.overlay.onStartUp();
     }
 
     @Subscribe
@@ -307,49 +257,17 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
     }
     @Subscribe
     public void onConfigChanged(ConfigChanged cfgEvent){
-
+        log.debug("onConfigChanged()");
+    }
+    public boolean isTargetTick(final int TICK_FREQUENCY){ return ((this.clientTickNum % TICK_FREQUENCY) == 0); }
+    @Subscribe
+    public void onClientTick(ClientTick clientTick){
+        this.clientTickNum++;
+        if (isTargetTick(GAME_AREA_CLIENT_TICK_EVERY)){ this.activeGameZone.onTick(); }
+        if (isTargetTick(PLUGIN_CHECK_READY_EVERY)){    if (! this.running){ checkReadyToRun(); }  }
     }
 
-    public int[] parseOut_LootItem(Matcher highlightMatcher){
-        if (! highlightMatcher.find()) { log.debug("Failed to match highlight pattern"); return new int[] {1, 0}; } // i know this will bite me in the ass, I'll fix it later
-        String hStr = highlightMatcher.group(1);
-        Matcher itemMatcher = itemP.matcher(hStr);
-        if (! itemMatcher.find()) { log.debug("Failed to match item pattern"); return new int[] {1, 0}; }           // i know this will bite me in the ass, I'll fix it later
-        String QtyS  = itemMatcher.group(1);
-        String ItemS = itemMatcher.group(2);
-        int    ItemId = LtaLootItem.getItemIdFromName(ItemS);
-        int       Qty = Integer.parseInt(QtyS);
-        return new int[] { ItemId, Qty };
-    }
-    public LtaLootItem parseOut_SupplyItem(Matcher highlightMatcher){
-              int[] parsedValues = parseOut_LootItem(highlightMatcher);
-                int itemId       = parsedValues[0];
-                int Qty          = parsedValues[1];
-        LtaLootItem supplyItem   = getMatchingSupplyItem(itemId);
-        supplyItem.haveQuantity += Qty;
-        return supplyItem;
-    }
-    public LtaLootItem parseOut_ArmourItem(Matcher highlightMatcher){
-              int[] parsedValues = parseOut_LootItem(highlightMatcher);
-                int itemId       = parsedValues[0];
-                int Qty          = parsedValues[1];
-        LtaLootItem armourItem   = getMatchingArmourItem(itemId);
-        armourItem.haveQuantity += Qty;
-        return armourItem;
-    }
-    public LtaLootItem[] parseAwardMessage(String msg){
-        Matcher _hm = highlightP.matcher(msg);
-        LtaLootItem updatedSupplyItem = parseOut_SupplyItem(_hm);
-        LtaLootItem updatedArmourItem = parseOut_ArmourItem(_hm);
-        //log.debug(String.format("Parsed -> (Supply : Qty=%s , Name=%s) : (Armour : Qty=%s, Name=%s)", supplyQtyS, supplyItemS, armourQtyS, armourItemS));
-        log.info(String.format("Parsed & Updated [S] -> %s", updatedSupplyItem.toDebugString()));
-        log.info(String.format("Parsed & Updated [A] -> %s", updatedArmourItem.toDebugString()));
-        printCheckPointBanner();
-        return new LtaLootItem[] {
-                updatedSupplyItem,
-                updatedArmourItem
-        };
-    }
+
     public int getTotalLootValue(){
         int total = 0;
         for (LtaLootItem sItem: supplies){
@@ -364,8 +282,8 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
         return String.format("%14s", String.format("%,d GP", getTotalLootValue()));
     }
     public String getCheckpointBannerStr(){
-        String streakS = String.valueOf(this.currentStreak);
-        String lapCntS = String.valueOf(this.currentLap);
+        String streakS = String.valueOf(this.currentSession.streak);
+        String lapCntS = String.valueOf(this.currentSession.lapNum);
         String bagValS = getTotalLootValueStr();
         return String.format("===== Streak %4s : Lap %-7s => Bag Value %s =====\r\n", streakS, lapCntS, bagValS);
     }
@@ -374,53 +292,28 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
         log.info(bStr);
         client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", bStr, null);
     }
-    public boolean checkIsAwardMessage(String chatMessage){
-        Matcher  _m = awardP.matcher(chatMessage);
-        if (! _m.find()){
-            //log.debug("Game Message does not match the award text pattern");
-            //log.debug(String.format("Game Message was: '%s'", msg));
-            return false;
-        }
-        log.debug("Received Game Message matching the award format pattern, proceeding to parse it out.");
-        LtaLootItem[] mutatedObjects = parseAwardMessage(chatMessage);
-        onDataMutation(mutatedObjects);
-        return true;
-    }
+
     public void updateLapCount(String msgMatchStr){
-        this.currentLap = Integer.parseInt(msgMatchStr);
+        this.currentSession.lapNum = Integer.parseInt(msgMatchStr);
+        this.currentSession.lapCount++;
     }
     public void updateStreak(String msgMatchStr){
-        this.currentStreak = Integer.parseInt(msgMatchStr);
-    }
-
-    public boolean checkIsLapCountMessage(String chatMessage){
-        Matcher _matcher = lapCountP.matcher(chatMessage);
-        if (! _matcher.find()){ return false; }
-        updateLapCount(_matcher.group(1));
-        return true;
-    }
-    public boolean checkIsStreakMessage(String chatMessage){
-        Matcher _matcher = rewardStreakP.matcher(chatMessage);
-        if (! _matcher.find()){ return false; }
-        updateStreak(_matcher.group(1));
-        if ((this.currentStreak % 20) == 0){
+        this.currentSession.streak = Integer.parseInt(msgMatchStr);
+        if ((this.currentSession.streak % 20) == 0){
             updateItemPrices();
         }
-        return true;
     }
 
-    /*
-        net.runelite.api.ChatMessageType
-        net.runelite.api.events.ChatMessage
-    */
+
+
     @Subscribe
     public void onChatMessage(ChatMessage cMsgEvent){
         // log.debug("WildyAgilityLootTrackerPlugin->onChatMessage()");
         if (cMsgEvent.getType() == ChatMessageType.GAMEMESSAGE){
             String  msg = cMsgEvent.getMessage();
-            if (checkIsLapCountMessage(msg)){ return; }
-            if (checkIsStreakMessage(msg)){ return; }
-            if (checkIsAwardMessage(msg)){ return; }
+            if (this.chatParser.checkIsLapCountMessage(msg)){ return; }
+            if (this.chatParser.checkIsStreakMessage(msg)){ return; }
+            if (this.chatParser.checkIsAwardMessage(msg)){ return; }
             // additional checks
         }
     }
@@ -449,3 +342,11 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
         java -ea -jar "C:\runelite-plugin-devel\Wildy_Agility_Loot_Tracker\build\libs\WildyAgilityLootTracker-1.0.0-all.jar" --developer-mode --debug
 
 */
+/* I really need a fucking flow chart....
+
+    startUp()
+        startInit()
+
+
+
+ */
