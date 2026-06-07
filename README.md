@@ -19,18 +19,18 @@ a side panel, or both.
 
 Some rudimentary JavaDocs are available.
 
-- [com.lita.LootUtils](build/docs/javadoc/com/lita/LootUtils/package-summary.html) - The overly complex replacement for LtaLootItem that may-or-may-not ever get finished
-- [com.lita](build/docs/javadoc/com/lita/package-summary.html) - The main plugin package
-    - [WildyAgilityLootTrackerConfig](build/docs/javadoc/com/lita/WildyAgilityLootTrackerConfig.html) - Configuration for the plugin. Not yet fully functioning. 
-    - [WildyAgilityLootTrackerPlugin](build/docs/javadoc/com/lita/WildyAgilityLootTrackerPlugin.html) - the core business logic for the plugin as a whole. The main orchestrator.
-    - [WildyAgilityLootTrackerOverlay](build/docs/javadoc/com/lita/WildyAgilityLootTrackerOverlay.html) - Everything related to the display structure, the overlay's panelComponents, etc
-    - [WildyAgilityChatParser](build/docs/javadoc/com/lita/WildyAgilityChatParser.html) - As simple as it sounds. Just a regex parser-module to take GAME_MESSAGE type chatMessages and pull out the valuable data from the messages that match the pattern of 1 of the 3 primary Wilderness Agility format chat messages that we are looking for.
-    - [WildyAgilityGameArea](build/docs/javadoc/com/lita/WildyAgilityGameArea.html) - the core active game area in which this plugin responds to. This module will track when you Enter or Exit this "Zone". See additional screenshot below. Courtesy of [This Website](https://mejrs.github.io/osrs?m=-1&z=2&p=0&x=3034&y=3929&layer=labels)
+- [com.lita.LootUtils](https://mr920.github.io/WildyAgilityLootTracker/com/lita/LootUtils/package-summary.html) - The overly complex replacement for LtaLootItem that may-or-may-not ever get finished
+- [com.lita](https://mr920.github.io/WildyAgilityLootTracker/com/lita/package-summary.html) - The main plugin package
+    - [WildyAgilityLootTrackerConfig](https://mr920.github.io/WildyAgilityLootTracker/com/lita/WildyAgilityLootTrackerConfig.html) - Configuration for the plugin. Not yet fully functioning. 
+    - [WildyAgilityLootTrackerPlugin](https://mr920.github.io/WildyAgilityLootTracker/com/lita/WildyAgilityLootTrackerPlugin.html) - the core business logic for the plugin as a whole. The main orchestrator.
+    - [WildyAgilityLootTrackerOverlay](https://mr920.github.io/WildyAgilityLootTracker/com/lita/WildyAgilityLootTrackerOverlay.html) - Everything related to the display structure, the overlay's panelComponents, etc
+    - [WildyAgilityChatParser](https://mr920.github.io/WildyAgilityLootTracker/com/lita/WildyAgilityChatParser.html) - As simple as it sounds. Just a regex parser-module to take GAME_MESSAGE type chatMessages and pull out the valuable data from the messages that match the pattern of 1 of the 3 primary Wilderness Agility format chat messages that we are looking for.
+    - [WildyAgilityGameArea](https://mr920.github.io/WildyAgilityLootTracker/com/lita/WildyAgilityGameArea.html) - the core active game area in which this plugin responds to. This module will track when you Enter or Exit this "Zone". See additional screenshot below. Courtesy of [This Website](https://mejrs.github.io/osrs?m=-1&z=2&p=0&x=3034&y=3929&layer=labels)
       - ![Active Agility Zone Area](ZoneArea.png)
-    - [WildyAgilitySession](build/docs/javadoc/com/lita/WildyAgilitySession.html) - Work in progress session-management and tracking object. Mostly a placeholder for now. More features coming soon.
-    - [WildyAgilityDebugHelper](build/docs/javadoc/com/lita/WildyAgilityDebugHelper.html) - Not much to see here. Just some quality-of-life functions and things. 
-    - [LtaLootItemImage](build/docs/javadoc/com/lita/LtaLootItemImage.html) - Stupid very basic little wrapper for ImageComponent that is hardly worth mentioning
-    - [LtaLootItem](build/docs/javadoc/com/lita/LtaLootItem.html) - The core datatype being used as the backbone for both display and book-keeping of the LootItems you are receiving from the course. This class got out of hand really fast and I do apologize for its unnecessary complexity. The rewrite attempt was a bust. 3rd try will go better maybe. 
+    - [WildyAgilitySession](https://mr920.github.io/WildyAgilityLootTracker/com/lita/WildyAgilitySession.html) - Work in progress session-management and tracking object. Mostly a placeholder for now. More features coming soon.
+    - [WildyAgilityDebugHelper](https://mr920.github.io/WildyAgilityLootTracker/com/lita/WildyAgilityDebugHelper.html) - Not much to see here. Just some quality-of-life functions and things. 
+    - [LtaLootItemImage](https://mr920.github.io/WildyAgilityLootTracker/com/lita/LtaLootItemImage.html) - Stupid very basic little wrapper for ImageComponent that is hardly worth mentioning
+    - [LtaLootItem](https://mr920.github.io/WildyAgilityLootTracker/com/lita/LtaLootItem.html) - The core datatype being used as the backbone for both display and book-keeping of the LootItems you are receiving from the course. This class got out of hand really fast and I do apologize for its unnecessary complexity. The rewrite attempt was a bust. 3rd try will go better maybe. 
 
 ## Additional Resources
 - [Main RuneLite Client API](https://static.runelite.net/runelite-client/apidocs/) - Because these are handy to have around
