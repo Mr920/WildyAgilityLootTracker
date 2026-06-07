@@ -143,6 +143,18 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <pre>@PluginDescriptor(name="WildyAgilityLootTracker")
 public class <span class="typeNameLabel">WildyAgilityLootTrackerPlugin</span>
 extends net.runelite.client.plugins.Plugin</pre>
+<div class="block">Plugin Main Class - handle and trigger events in accordance with plugin lifecycle,
+ execute main business logic, Tie everything together.
+
+
+ <h2>Lifecycle (as I understand it)</h2>
+ <pre>
+      <a href="#startUp()"><code>startUp()</code></a>
+          <a href="#_init()"><code>_init()</code></a>
+              ...
+              <code>ClientThread.invoke(Runnable)</code>
+                  <a href="#init_LootItems()"><code>init_LootItems()</code></a>
+ </pre></div>
 </li>
 </ul>
 </div>

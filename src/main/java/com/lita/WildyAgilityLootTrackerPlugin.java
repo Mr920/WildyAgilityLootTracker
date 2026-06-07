@@ -39,17 +39,19 @@ import java.time.LocalDateTime;
         https://static.runelite.net/runelite-client/apidocs/net/runelite/client/events/package-summary.html */
 
 /**
- * Plugin Main Class - handle and trigger events in accordance with plugin lifecycle.
- * execute main business logic. Tie everything together.
- * <p><h2>Lifecycle (as I understand it)</h2>
- *  <pre>
+ * Plugin Main Class - handle and trigger events in accordance with plugin lifecycle,
+ * execute main business logic, Tie everything together.
+ *
+ *
+ * <h2>Lifecycle (as I understand it)</h2>
+ * <pre>
  *      {@link WildyAgilityLootTrackerPlugin#startUp()}
- *          -> {@link WildyAgilityLootTrackerPlugin#_init()}
- *              -> ...
- *              -> {@link net.runelite.client.callback.ClientThread#invoke(Runnable)}
- *                  -> {@link WildyAgilityLootTrackerPlugin#init_LootItems()}
- *  </pre>
- * </p>
+ *          {@link WildyAgilityLootTrackerPlugin#_init()}
+ *              ...
+ *              {@link net.runelite.client.callback.ClientThread#invoke(Runnable)}
+ *                  {@link WildyAgilityLootTrackerPlugin#init_LootItems()}
+ * </pre>
+ *
  */
 @Slf4j
 @PluginDescriptor(
