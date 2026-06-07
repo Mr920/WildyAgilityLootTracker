@@ -20,6 +20,7 @@ public class WildyAgilityChatParser {
 
     public WildyAgilityChatParser(WildyAgilityLootTrackerPlugin _plugin){
         plugin        = _plugin;
+        log.debug("Instantiating");
         awardP        = Pattern.compile("You have been awarded");
         highlightP    = Pattern.compile("[<]col[=]ef1020[>]([^<]+)[<].col[>]");
         itemP         = Pattern.compile("([0-9]+) x (.+)");

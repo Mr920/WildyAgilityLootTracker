@@ -41,14 +41,25 @@ public class WildyAgilitySession {
     public WildyAgilitySession(WildyAgilityLootTrackerPlugin _plugin){
         this.plugin = _plugin;
         this.num = getNewID();
+        log.debug("Instantiating");
         if (WildyAgilitySession.current == null){
             WildyAgilitySession.current = this;
         }
         last = this;
     }
     public void start(){
-        this.startDt = LocalDateTime.now();
-        log.debug("Started Session " + Integer.toString(this.num, 10));
+        if (! hasStarted()) {
+            this.startDt = LocalDateTime.now();
+            log.debug("Started Session " + Integer.toString(this.num, 10));
+        }
+        else {
+            if (! hasFinished()){
+                end();
+            }
+            save();
+            this.plugin.currentSession = getNew(this.plugin);
+            this.plugin.currentSession.start();
+        }
     }
     public void end(){
         log.debug("Ending session...");
@@ -57,10 +68,16 @@ public class WildyAgilitySession {
         //clear();
     }
     public void save(){
-        log.debug("To-Do : Implement save()");
+        log.debug("save() -> To-Do: Implement This Method");
+    }
+    public boolean hasStarted(){
+        return (this.startDt != null);
+    }
+    public boolean hasFinished(){
+        return (this.endDt != null);
     }
     public boolean isActive(){
-        return ((this.startDt != null) && (this.endDt == null));
+        return (hasStarted() && (! hasFinished()));
     }
 
     /* Is this even needed?

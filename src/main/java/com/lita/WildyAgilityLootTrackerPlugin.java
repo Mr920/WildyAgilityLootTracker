@@ -12,6 +12,7 @@ import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.client.RuneLite;
 import net.runelite.client.callback.ClientThread;
+import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
@@ -46,19 +47,7 @@ import java.time.LocalDateTime;
 
 /* Notes - I'm going to put notes here until I figure out what I'm doing
 
-   Basic Idea:
-        OnStartup
-            Grab a list of Item Prices for all the possible wildy loot items, and setup an initial mapping between item and its price
-        
-        ?????????
-            Detect or in some way verify that the user has entered the agility arena (should a session be continued across logins over time?)
-            Start a session, using the correct session number and encoding appropriate metadata (like datetime)
-            
-        OnChatMessage
-            Determine if its a wildy-agility type game message (regex pattern matching probably)
-            Parse Out the message
-            Update session structures to reflect the addition of the new loot items
-                Keep track of streak and lap info?
+
 
 
 */
@@ -97,62 +86,158 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
 {
 
             public static final int      GAME_AREA_CLIENT_TICK_EVERY =  25; // half a second
-            public static final int      PLUGIN_CHECK_READY_EVERY    = 100; // about 2 seconds
+            public static final int      PLUGIN_CHECK_READY_EVERY    =  50; // about 1 seconds
+            public static final String   CONFIG_GROUP_NAME           = "WildyAgilityLootTracker";
             public static ItemManager    ItemManager;
 
-            public  boolean                        firstUserLoginInit     = false;
-            public  boolean                        playerFirstLoad        = false;
-            public  boolean                        running                = false;
+            /* Since I suck at flow control management, I need a series of flip-once toggles to help keep track of where we are and what has fired
+               the goal of this is more fined-tuning state checking and the ability to stop execution in its tracks if it seems we are doing something redundant without first having
+               reinitialized everything properly
+
+               Yes I know how redundant and ridiculous this is, but until I can get things under control this is how we're doing it
+            */
+            public  boolean                        _s_startedPlugin       = false;
+            public  boolean                        _s_stoppedPlugin       = false;
+            public  boolean                        _s_initialized         = false;
+            public  boolean                        _s_initLoot            = false;
+            public  boolean                        _s_startedSession      = false;
+            public  boolean                        _s_finishedSession     = false;
+            public  boolean                        _s_userReady           = false;
+            public  boolean                        _s_startedRun          = false;
+            public  boolean                        _s_finishedRun         = false;
+            public  boolean                        _s_enteredZone         = false;
+            public  boolean                        _s_exitedZone          = false;
+            public  boolean                        _s_inZone              = false;
+            public  boolean                        _s_firstPlayerLogin    = false;
+            public  boolean                        _s_firstPlayerLoad     = false;
+            public  boolean                        _s_sessionReady        = false;
+            public  boolean                        _s_zoneReady           = false;
+            public  boolean                        _s_readyToRun          = false;
+
+            public  boolean                        _s_GS_STARTING         = false;
+            public  boolean                        _s_GS_LOGIN_SCREEN     = false;
+            public  boolean                        _s_GS_LOGGING_IN       = false;
+            public  boolean                        _s_GS_LOGGED_IN        = false;
+            public  boolean                        _s_GS_LOADING          = false;
+
+            public  boolean                        _autoCheckRunState     = true;
+            public  boolean                        _autoMonitorGameZone   = true;
+
     @Inject public  Client                         client;
     @Inject public  ClientThread                   clientThread;
     @Inject public  WildyAgilityLootTrackerConfig  config;
     @Inject public  ItemManager                    itemManager;
+    @Inject public  ChatMessageManager             chatMessageManager;
     @Inject public  OverlayManager                 overlayManager;
     @Inject public  WildyAgilityLootTrackerOverlay overlay;
+
             public  WildyAgilitySession            currentSession         = null;
             public  WildyAgilityChatParser         chatParser             = null;
             public  WildyAgilityGameArea           activeGameZone         = null;
             public  WildyAgilityDebugHelper        debugHelper            = null;
-            public  LtaLootItem[]                  supplies;
-            public  LtaLootItem[]                  armour;
+            public  LtaLootItem[]                  supplies               = null;
+            public  LtaLootItem[]                  armour                 = null;
             public  String                         currentLootValStr      = null;
            private  int                            clientTickNum          = 0;
 
-
-    public void startSession(){       this.currentSession.start();     }
-    public void endSession(){         this.currentSession.end(); clearCurrentState();     }
+   /* be careful with this one...
+      it is likely to cause bugs, should really only be used in a hard-kill type situation in conjunction with other cleanup functions
+    */
+    public void RESET_ALL_STATE_FLAGS(){
+           this._s_startedPlugin = false;   this._s_stoppedPlugin = false;     this._s_initialized = false;
+                this._s_initLoot = false;  this._s_startedSession = false; this._s_finishedSession = false;
+               this._s_userReady = false;      this._s_startedRun = false;     this._s_finishedRun = false;
+             this._s_enteredZone = false;      this._s_exitedZone = false;          this._s_inZone = false;
+        this._s_firstPlayerLogin = false; this._s_firstPlayerLoad = false;      this._s_readyToRun = false;
+        this._s_sessionReady     = false;       this._s_zoneReady = false;
+    }
+    public void PREPARE_FLAG_FOR_NEXT_RUN(){
+        this._s_stoppedPlugin   = false;
+      //this._s_initLoot        = false;
+        this._s_startedSession  = false;
+        this._s_finishedSession = false;
+        this._s_startedRun      = false;
+        this._s_finishedRun     = false;
+        this._s_enteredZone     = false;
+        this._s_exitedZone      = false;
+        this._s_inZone          = false;
+        this._s_readyToRun      = false;
+        this._s_sessionReady    = false;
+        this._s_zoneReady       = false;
+    }
+    public void startSession(){
+        if (! _s_startedSession){
+            this.currentSession.start();
+             this._s_startedSession = true;
+            this._s_finishedSession = false;
+        }
+        else {
+            if (this.currentSession.isActive()){
+                endSession();
+                startSession();
+            }
+            else {
+                this.currentSession = new WildyAgilitySession(this);
+                this.currentSession.start();
+                this._s_startedSession  = true;
+                this._s_finishedSession = false;
+            }
+        }
+    }
+    public void endSession(){
+        if (_s_startedSession && (! _s_finishedSession)){
+            this.currentSession.end();
+            this._s_finishedSession = true; /* clearCurrentState(); */
+        }
+    }
     public void saveCurrentSession(){ this.currentSession.save();    }
+    /*
     public void clearCurrentState(){
         this.currentSession = null;
+        this.chatParser     = null;
+        this.activeGameZone = null;
+        this.debugHelper    = null;
         this.supplies       = null;
         this.armour         = null;
     }
+    */
+    public void updateItemDisplayConfig(LtaLootItem[] items){
+        for (LtaLootItem item: items){
+            item._detectIfConfigured(this.config);
+        }
+    }
+    public void updateItemDisplayConfigs(){
+        log.debug("updateItemDisplayConfig(this.supplies)");
+        updateItemDisplayConfig(this.supplies);
+        log.debug("updateItemDisplayConfig(this.armour)");
+        updateItemDisplayConfig(this.armour);
+    }
     public void init_LootItems(){
-        log.debug("Initializing LtaLootItem objects for supply and armour item tracking...");
-        this.supplies   = LtaLootItem.getSupplyItems();
-        this.armour     = LtaLootItem.getAllArmourItems();
-        log.debug("Updating each LtaLootItem's display prop to match current config...");
-        for (LtaLootItem supplyItem: supplies){
-            supplyItem._detectIfConfigured(this.config);
-        }
-        for (LtaLootItem armourItem: armour){
-            armourItem._detectIfConfigured(this.config);
+        if (! _s_initLoot) {
+            this._s_initLoot = true;
+            log.debug("Initializing : this.supplies -> LtaLootItem.getSupplyItems()");
+            this.supplies = LtaLootItem.getSupplyItems();
+            log.debug("Initializing : this.armour   -> LtaLootItem.getAllArmourItems()");
+            this.armour   = LtaLootItem.getAllArmourItems();
+            updateItemDisplayConfigs();
         }
     }
-    public void startInit(){
-        this.currentSession = new WildyAgilitySession(this);
-        this.chatParser     = new WildyAgilityChatParser(this);
-        this.activeGameZone = new WildyAgilityGameArea(this);
-        this.debugHelper    = new WildyAgilityDebugHelper(this);
-        WildyAgilityLootTrackerPlugin.ItemManager = this.itemManager;
+    public void _init(){
+        if (! _s_initialized) {
+            this._s_initialized = true;
+            log.debug("_init()");
+            this.currentSession = new WildyAgilitySession(this);
+            this.chatParser     = new WildyAgilityChatParser(this);
+            this.activeGameZone = new WildyAgilityGameArea(this);
+            this.debugHelper    = new WildyAgilityDebugHelper(this);
+            WildyAgilityLootTrackerPlugin.ItemManager = this.itemManager; // this was seriously the stupidest design decision ever, PLEASE refactor this to not be necessary anymore
+            this.clientThread.invoke(() -> {
+                init_LootItems();
+                this.currentLootValStr = getTotalLootValueStr();
+            });
+        }
+    }
 
-    }
-    public void finishInit(){
-        this.clientThread.invoke(() -> {
-            init_LootItems();
-            this.currentLootValStr = getTotalLootValueStr();
-        });
-    }
 
     public LtaLootItem getMatchingLootItem(int itemId, LtaLootItem[] searchList){
                 int index         = 0;
@@ -165,7 +250,6 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
     }
     public LtaLootItem getMatchingSupplyItem(int itemId){ return getMatchingLootItem(itemId, supplies); }
     public LtaLootItem getMatchingArmourItem(int itemId){ return getMatchingLootItem(itemId, armour);   }
-
     public void updateLootItemPrices(LtaLootItem[] items){
         for (LtaLootItem itm: items){ itm.updateItemPrice(); }
     }
@@ -173,71 +257,188 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
         updateLootItemPrices(this.supplies);
         updateLootItemPrices(this.armour);
     }
-
     public void onDataMutation(LtaLootItem[] mutatedObjects){
         this.currentLootValStr = getTotalLootValueStr(); // by doing this here and now, we can cut down on string-formatting stuff happening in the OverlayPanel's render call
         this.overlay.onDataMutation(mutatedObjects);  // ensure OverlayPanel's component structure only gets rebuilt when an awardMessage is actually detected and parsed
     }
 
     @Override
-    protected void startUp() throws Exception
-    {
-        log.debug("WildyAgilityLootTrackerPlugin started!");
-        startInit();
-        finishInit();
-        checkReadyToRun();
+    protected void startUp() throws Exception {
+        if (! _s_startedPlugin) {
+            this._s_startedPlugin = true;
+            this._s_stoppedPlugin = false;
+            log.debug("startUp():START");
+            _init();
+            //this.running = true;
+            //checkReadyToRun();
+            log.debug("startUp():END");
+        }
     }
 
     @Override
-    protected void shutDown() throws Exception
-    {
-        this.running = false;
-        endSession();
-        this.overlay.onShutdown();
-        log.debug("WildyAgilityLootTrackerPlugin stopped!");
+    protected void shutDown() throws Exception {
+        if (! _s_stoppedPlugin) {
+            this._s_stoppedPlugin = true;
+            log.debug("shutDown():START");
+            //this.running = false;
+            endSession();
+            this.overlay.onShutdown();
+            log.debug("shutDown():END");
+        }
     }
 
 
 
-
+    /* activeGameZone is doing its own monitoring, I don't think this method is really required....
     public boolean detectPlayerInZone(){
-        return this.activeGameZone.isPlayerInZone();
+        this._s_inZone = this.activeGameZone.isPlayerInZone();
+        return this._s_inZone;
     }
-    public boolean isUserReady(){
-        return playerFirstLoad && this.currentSession.isActive();
-    }
-    public void onUserReady(){
-        log.debug("onUserReady()");
+    */
+    public void onReadyToRun(){
+        this._autoCheckRunState = false;
+        log.debug("onReadyToRun() -> startRunning()");
         startRunning();
     }
 
     public boolean checkReadyToRun(){
-        if (! isUserReady()){ return false; }
-        if (! detectPlayerInZone()){ return false; }
-        onUserReady();
-        return true;
+        if (! _s_readyToRun){
+            if (! checkGameStateReady()){  return false; }
+            if (! checkUserLoginScreen()){ return false; }
+            if (! checkUserLoaded()){      return false; }
+            if (! checkUserReady()){       return false; }
+            if (! checkSessionReady()){    return false; }
+            if (! checkZoneReady()){       return false; }
+            this._s_readyToRun = true;
+        }
+        // consider doing any final conditional checks
+        return this._s_readyToRun;
     }
-
-    public void onUserLogin(){
-        log.debug("onUserLogin()");
-        if (! firstUserLoginInit) {
-            clientThread.invokeLater(() -> {
-                if (this.client.getLocalPlayer() == null){ return false; } //dont actually need the player, just need to know client has reached this point in initialization/lifecycle
-                else {
-                    log.debug("User has logged in. Local player is not null. This is the first and only time this method should fire.");
-                    playerFirstLoad = true;
-                    return true;
-                }
-            });
-            firstUserLoginInit = true; // since invokeLater will keep retrying, we can immediately act as if the call has been made and set it such that it won't try to call invokeLater again
+    public boolean checkGameStateReady(){
+        if (! this._s_GS_LOGGED_IN){
+            // no conditional checks to be done here, as this is managed by the onGameStateChanged() listener
+            debugLog_statusCall("checkGameStateReady()", "_s_GS_LOGGED_IN", "false"); return false;
+        }
+        else {
+            debugLog_statusCall("checkGameStateReady()", "_s_GS_LOGGED_IN", "true");
+        }
+        return this._s_GS_LOGGED_IN;
+    }
+    public boolean checkUserLoginScreen(){
+        if (! _s_firstPlayerLogin) {
+            if (! _s_GS_LOGGED_IN) { debugLog_statusCall("checkUserLoginScreen()", "_s_GS_LOGGED_IN", "false"); return false; }
+            else {
+                this._s_firstPlayerLogin = true;
+                debugLog_statusCall("checkUserLoginScreen()", "_s_firstPlayerLogin", "true");
+            }
+        }
+        return _s_firstPlayerLogin;
+    }
+    public boolean checkUserLoaded(){
+        if (! _s_firstPlayerLoad){
+            if (this.client.getLocalPlayer() == null){
+                debugLog_statusCall("checkUserLoaded()", "_s_firstPlayerLoad", "false");
+                return false;
+            }
+            else {
+                this._s_firstPlayerLoad = true;
+                debugLog_statusCall("checkUserLoaded()", "_s_firstPlayerLoad", "true");
+            }
+        }
+        return this._s_firstPlayerLoad;
+    }
+    public boolean checkSessionReady(){
+        if (! this._s_sessionReady){
+            if (this.currentSession.isActive()){ debugLog_statusCall("checkSessionReady()", "currentSession.isActive()", "true"); return false; }
+            else {
+                this._s_sessionReady = true;
+                debugLog_statusCall("checkSessionReady()", "_s_sessionReady", "true");
+            }
+        }
+        return this._s_sessionReady;
+    }
+    public boolean checkUserReady(){
+        if (! _s_userReady) {
+            if (! _s_firstPlayerLoad){   debugLog_statusCall("checkUserReady()", "_s_firstPlayerLoad", "false"); return false; }
+            else {
+                this._s_userReady = true;
+                debugLog_statusCall("checkUserReady()", "_s_userReady", "true");
+            }
+        }
+        return this._s_userReady; // even though nothing executed, still return correct state
+    }
+    public boolean checkZoneReady(){
+        if (! _s_zoneReady){
+            //if (! detectPlayerInZone()){ log.debug("checkZoneReady() -> detectPlayerInZone => false"); return false; } // this is expensive and not really required since I have the GameArea doing its own monitoring....
+            if (! _s_inZone){            debugLog_statusCall("checkZoneReady()", "_s_inZone", "false"); return false; }
+            else {
+                this._s_zoneReady = true;
+                debugLog_statusCall("checkZoneReady()", "_s_zoneReady", "true");
+            }
+        }
+        return this._s_zoneReady;
+    }
+    public void checkAllReady(){
+        if (checkReadyToRun()) {
+            log.debug("checkAllReady() -> onReadyToRun()");
+            onReadyToRun();
         }
     }
 
+    public void debugLog_statusCall(String callName, String varName, String varValue){
+        String fmt_str = String.format("%25s -> %25s => %s", callName, varName, varValue);
+        log.debug(fmt_str);
+    }
+
+    public void turnAutoChecksAndMonitorsOn(){
+        log.debug("turnAutoChecksAndMonitorsOn()");
+        if (! this._autoCheckRunState){ this._autoCheckRunState = true; }
+        if (! this._autoMonitorGameZone) { this._autoMonitorGameZone = true; }
+        if (this._s_finishedRun){ this.prepareNextRun(); }
+    }
+
+    public void prepareNextRun(){
+        this.PREPARE_FLAG_FOR_NEXT_RUN();
+
+    }
+
     public void startRunning(){
-        log.debug("startRunning()");
-        this.running = true;
-        this.debugHelper.reportRunning();
-        this.overlay.onStartUp();
+        if (! _s_startedRun) {
+            log.debug("startRunning()");
+            this._s_startedRun  = true;
+            this._s_finishedRun = false;
+            startSession();
+            this.debugHelper.reportRunning();
+            this.overlay.onStartUp();
+        }
+    }
+    public void stopRunning(){
+        if (! this._s_finishedRun) {
+            this._s_finishedRun = true;
+            log.debug("stopRunning()");
+            this.currentSession.end();
+            this.turnAutoChecksAndMonitorsOn();
+        }
+    }
+
+    public void onZoneEnter(){
+        if (! this._s_inZone) {
+            log.debug("onZoneEnter()");
+            this._s_enteredZone = true;
+            this._s_inZone      = true;
+            this.debugHelper.queueCallMessage("onZoneEnter", "user in active zone");
+            //startRunning();
+        }
+    }
+    public void onZoneExit(){
+        if (this._s_inZone) {
+            log.debug("onZoneExit()");
+            this._s_exitedZone  = true;
+            this._s_inZone      = false;
+            this.debugHelper.queueCallMessage("onZoneExit", "stopping the run...");
+            stopRunning();
+            this.overlay.onShutdown();
+        }
     }
 
     @Subscribe
@@ -246,25 +447,79 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
         switch( gameStateChanged.getGameState() ){
             case CONNECTION_LOST:            log.debug("GameState.CONNECTION_LOST");                             break;
             case HOPPING:                    log.debug("GameState.HOPPING");                                     break;
-            case LOADING:                    log.debug("GameState.LOADING");                                     break;
-            case LOGGED_IN:                  log.debug("GameState.LOGGED_IN"); onUserLogin();                    break;
-            case LOGGING_IN:                 log.debug("GameState.LOGGING_IN");                                  break;
-            case LOGIN_SCREEN:               log.debug("GameState.LOGIN_SCREEN");                                break;
-            case LOGIN_SCREEN_AUTHENTICATOR: log.debug("GameState.LOGIN_SCREEN_AUTHENTICATOR");                  break;
-            case STARTING:                   log.debug("GameState.STARTING");                                    break;
+            case LOADING:
+                if (! this._s_GS_LOADING){
+                    this._s_GS_LOADING = true;
+                }
+                log.debug("GameState.LOADING"); // go ahead and continue to display every time anyway
+                break;
+            case LOGGED_IN:
+                if (! this._s_GS_LOGGED_IN){
+                    this._s_GS_LOGGED_IN = true;
+                    log.debug("GameState.LOGGED_IN");
+                    //onUserLogin();
+                }
+                break;
+            case LOGGING_IN:
+                if (! this._s_GS_LOGGING_IN){
+                    this._s_GS_LOGGING_IN = true;
+                    log.debug("GameState.LOGGING_IN");
+                }
+                break;
+            case LOGIN_SCREEN:
+                if (! this._s_GS_LOGIN_SCREEN){
+                    this._s_GS_LOGIN_SCREEN = true;
+                    log.debug("GameState.LOGIN_SCREEN");
+                }
+                break;
+            case LOGIN_SCREEN_AUTHENTICATOR:
+                log.debug("GameState.LOGIN_SCREEN_AUTHENTICATOR");
+                break;
+            case STARTING:
+                if (! this._s_GS_STARTING){
+                    this._s_GS_STARTING = true;
+                    log.debug("GameState.STARTING");
+                }
+                break;
             case UNKNOWN:                    log.debug("GameState.UNKNOWN");                                     break;
         }
     }
     @Subscribe
     public void onConfigChanged(ConfigChanged cfgEvent){
-        log.debug("onConfigChanged()");
+        //log.debug("onConfigChanged()");
+        String     groupName = cfgEvent.getGroup();
+        String qualifiedName = null;
+        String     debugText = null;
+        if ( groupName.equals(CONFIG_GROUP_NAME) ){
+            qualifiedName = String.format("onConfigChanged(%s::%s)", cfgEvent.getGroup(), cfgEvent.getKey());
+                debugText = String.format("%45s : %6s => %s", qualifiedName, cfgEvent.getOldValue(), cfgEvent.getNewValue());
+                log.debug(debugText);
+        }
     }
     public boolean isTargetTick(final int TICK_FREQUENCY){ return ((this.clientTickNum % TICK_FREQUENCY) == 0); }
+
+    public void onTick_GameArea(){
+        this.activeGameZone.onTick();
+    }
+    public void onTick_PluginCheckReady(){
+        checkAllReady();
+    }
+
     @Subscribe
     public void onClientTick(ClientTick clientTick){
+
         this.clientTickNum++;
-        if (isTargetTick(GAME_AREA_CLIENT_TICK_EVERY)){ this.activeGameZone.onTick(); }
-        if (isTargetTick(PLUGIN_CHECK_READY_EVERY)){    if (! this.running){ checkReadyToRun(); }  }
+        if (this._autoMonitorGameZone) {
+            if (isTargetTick(GAME_AREA_CLIENT_TICK_EVERY)) {
+                onTick_GameArea();
+            }
+        }
+        if (this._autoCheckRunState) {
+            if (isTargetTick(PLUGIN_CHECK_READY_EVERY)) {
+                onTick_PluginCheckReady();
+            }
+        }
+
     }
 
 
@@ -304,8 +559,6 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
         }
     }
 
-
-
     @Subscribe
     public void onChatMessage(ChatMessage cMsgEvent){
         // log.debug("WildyAgilityLootTrackerPlugin->onChatMessage()");
@@ -319,13 +572,9 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
     }
 
     @Provides
-    WildyAgilityLootTrackerConfig provideConfig(ConfigManager configManager)
-    {
+    WildyAgilityLootTrackerConfig provideConfig(ConfigManager configManager){
         return configManager.getConfig(WildyAgilityLootTrackerConfig.class);
     }
-
-
-
 
     public static void main(String[] args) throws Exception {
         ExternalPluginManager.loadBuiltin(WildyAgilityLootTrackerPlugin.class);
@@ -344,8 +593,14 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
 */
 /* I really need a fucking flow chart....
 
-    startUp()
-        startInit()
+
+Flows:
+
+    Normal Login, within area
+
+    Normal Login, outside of area
+
+
 
 
 
