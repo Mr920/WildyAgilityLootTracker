@@ -47,6 +47,9 @@ tasks.withType(JavaCompile).configureEach {
 	options.encoding = 'UTF-8'
 //	options.release.set(11)
 }
+tasks.withType(Javadoc) {
+	destinationDir = file("${projectDir}/docs")
+}
 
 // https://docs.gradle.org/8.10/javadoc/org/gradle/api/tasks/TaskContainer.html#register(java.lang.String,java.lang.Class)
 // https://docs.gradle.org/8.10/javadoc/org/gradle/api/tasks/JavaExec.html
