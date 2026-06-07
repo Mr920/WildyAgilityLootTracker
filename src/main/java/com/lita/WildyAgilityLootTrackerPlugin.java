@@ -25,59 +25,32 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.time.LocalDateTime;
 
-
-
-/*  Splunk Search
-```
-    index=runelite* ("Wilderness Agility" OR "you have been awarded")
-    | rex "You have been awarded [<]col[=]ef1020[>](?<supply_item_str>[^<]+)<.col> and [<]col[=]ef1020[>](?<loot_item_str>[^<]+)"
-    | rex "Your Wilderness Agility reward streak is: <col=ff0000>(?<streak>[0-9]+)"
-    | rex "Your Wilderness Agility lap count is: <col=ff0000>(?<lap_count>[0-9]+)"
-    | transaction startswith="lap_count!=null()" endswith="loot_item_str!=null()"
-    | eval loot_props_array=split(loot_item_str, " x ")
-    | eval supply_props_array=split(supply_item_str, " x ")
-    | eval loot_item=mvindex(loot_props_array, 1)
-    | eval loot_item_qty=mvindex(loot_props_array, 0)
-    | eval loot_item_array=split(loot_item, " ")
-    | eval loot_item_category=mvindex(loot_item_array, 0)
-    | eval supply_item=mvindex(supply_props_array, 1)
-    | eval supply_item_qty=mvindex(supply_props_array, 0)
-```
+/* To-Do:
+        [ ] Make this thing respect the config
+        [ ] Session Management, complete with the ability to preserve historical information on the loot item quantities and prices from previous sessions
+        [ ] Make visual overlay configurable/switchable to Swing-based Side Panel
+        [ ] Give users a "clear session" button
+        [x] Detect when user enters or leaves agility arena
+        [ ] Detect logouts / logins
+        [ ] Give users the ability to override the estimated item prices in the config; This will be on a per-session basis, with the default behavior still being to pull them from the client API at the start of a new session
+        [ ] Maybe show additional statistics like the most recent bag-value-increase amount, maybe show an average rate of increase as well
 */
+/* Don't forget about:
+        https://static.runelite.net/runelite-client/apidocs/net/runelite/client/events/package-summary.html */
 
-/* Notes - I'm going to put notes here until I figure out what I'm doing
-
-
-
-
-*/
-/*
-    To-Do:
-        - Make this thing respect the config
-        - Session Management, complete with the ability to preserve historical information on the loot item quantities and prices from previous sessions
-        - Make visual overlay configurable/switchable to Swing-based Side Panel
-        - Give user's a "clear session" button
-        - Detect when user enters or leaves agility arena
-        - Detect logouts / logins
-        - Give users the ability to override the estimated item prices in the config; This will be on a per-session basis, with the default behavior still being to pull them from the client API at the start of a new session
-        - Maybe show additional statistics like the most recent bag-value-increase amount, maybe show an average rate of increase as well
-*/
-/*
-    Client Events we should probably be listening to:
-        ClientShutdown
-        ConfigChanged
-        ConfigSync
-        RuneScapeProfileChanged
-        SessionOpen
-        SessionClose
-
-
-*/
-
-
-
-
-
+/**
+ * Plugin Main Class - handle and trigger events in accordance with plugin lifecycle.
+ * execute main business logic. Tie everything together.
+ * <p><h2>Lifecycle (as I understand it)</h2>
+ *  <pre>
+ *      {@link WildyAgilityLootTrackerPlugin#startUp()}
+ *          -> {@link WildyAgilityLootTrackerPlugin#_init()}
+ *              -> ...
+ *              -> {@link net.runelite.client.callback.ClientThread#invoke(Runnable)}
+ *                  -> {@link WildyAgilityLootTrackerPlugin#init_LootItems()}
+ *  </pre>
+ * </p>
+ */
 @Slf4j
 @PluginDescriptor(
     name = "WildyAgilityLootTracker"
@@ -191,16 +164,7 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
         }
     }
     public void saveCurrentSession(){ this.currentSession.save();    }
-    /*
-    public void clearCurrentState(){
-        this.currentSession = null;
-        this.chatParser     = null;
-        this.activeGameZone = null;
-        this.debugHelper    = null;
-        this.supplies       = null;
-        this.armour         = null;
-    }
-    */
+
     public void updateItemDisplayConfig(LtaLootItem[] items){
         for (LtaLootItem item: items){
             item._detectIfConfigured(this.config);
@@ -584,24 +548,10 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
 
 /*  Execution (because my dumbass forgets everything)
 
+        .\gradlew.bat clean --info
+        .\gradlew.bat javadoc --info
+        .\gradlew.bat build --info
+        .\gradlew.bat runTest --info
         .\gradlew.bat runMain --info
-
-    later we can add a gradle exec task to run the shadowJar:
-
-        java -ea -jar "C:\runelite-plugin-devel\Wildy_Agility_Loot_Tracker\build\libs\WildyAgilityLootTracker-1.0.0-all.jar" --developer-mode --debug
-
+        .\gradlew.bat shadowJar --info
 */
-/* I really need a fucking flow chart....
-
-
-Flows:
-
-    Normal Login, within area
-
-    Normal Login, outside of area
-
-
-
-
-
- */
