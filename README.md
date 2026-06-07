@@ -2,11 +2,11 @@
 
 This document is currently a work-in-progress. Expect it to be incomplete and constantly changing. 
 
-For now most everything is under [main/com.lita](src/main/java/com.lita) package. 
+For now most everything is under [main/com.lita](src/main/java/com/lita) package. 
 
-The files under [main/com.lita.LootUtils](src/main/java/com.lita/LootUtils) package are a 2nd revision to 
-[LtaLootItem](src/main/java/com.lita/LtaLootItem.java). It is an incomplete, not-yet-implemented attempt to simplify
-[LtaLootItem](src/main/java/com.lita/LtaLootItem.java), although it quickly went beyond the anticipated complexity and may in fact be worse than what it was supposed
+The files under [main/com.lita.LootUtils](src/main/java/com/lita/LootUtils) package are a 2nd revision to 
+[LtaLootItem](src/main/java/com/lita/LtaLootItem.java). It is an incomplete, not-yet-implemented attempt to simplify
+[LtaLootItem](src/main/java/com/lita/LtaLootItem.java), although it quickly went beyond the anticipated complexity and may in fact be worse than what it was supposed
 to simplify. 
 
 The main function of this plugin is to create an overlay showing what loot you have accumulated from your wildy laps
@@ -31,5 +31,15 @@ Some rudimentary JavaDocs are available.
     - [WildyAgilityDebugHelper](build/docs/javadoc/com/lita/WildyAgilityDebugHelper.html) - Not much to see here. Just some quality-of-life functions and things. 
     - [LtaLootItemImage](build/docs/javadoc/com/lita/LtaLootItemImage.html) - Stupid very basic little wrapper for ImageComponent that is hardly worth mentioning
     - [LtaLootItem](build/docs/javadoc/com/lita/LtaLootItem.html) - The core datatype being used as the backbone for both display and book-keeping of the LootItems you are receiving from the course. This class got out of hand really fast and I do apologize for its unnecessary complexity. The rewrite attempt was a bust. 3rd try will go better maybe. 
+
+## Additional Resources
 - [Main RuneLite Client API](https://static.runelite.net/runelite-client/apidocs/) - Because these are handy to have around
 - [Main RuneLite API](https://static.runelite.net/runelite-api/apidocs/) - Also very handy to have around
+- [Gradle Settings](https://docs.gradle.org/8.10/javadoc/org/gradle/api/initialization/Settings.html) - corresponds to [settings.gradle](settings.gradle) file
+- [Gradle Project](https://docs.gradle.org/8.10/javadoc/org/gradle/api/Project.html) - corresponds to [build.gradle](build.gradle) file
+- [Logback Configuration](https://logback.qos.ch/manual/configuration.html) 
+- [RuneLite Development Logging](https://github.com/runelite/runelite/wiki/Plugin-Development-Logging)
+
+## Things I still need to figure out myself
+- [runelite-plugin.properties](runelite-plugin.properties) 
+- more to come as I remember stuff
