@@ -1,0 +1,9 @@
+.gradle/buildOutputCleanup/buildOutputCleanup.lock
+.gradle/8.10/executionHistory/executionHistory.bin
+.gradle/8.10/executionHistory/executionHistory.lock
+.gradle/8.10/fileHashes/fileHashes.bin
+.gradle/8.10/fileHashes/fileHashes.lock
+build/tmp/compileJava/previous-compilation-data.bin
+.gradle/8.10/fileHashes/resourceHashesCache.bin
+build/classes/
+build/tmp/compileJava/compileTransaction/stash-dir/

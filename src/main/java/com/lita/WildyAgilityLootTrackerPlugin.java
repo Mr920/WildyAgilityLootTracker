@@ -45,11 +45,70 @@ import java.time.LocalDateTime;
  *
  * <h2>Lifecycle (as I understand it)</h2>
  * <pre>
- *      {@link WildyAgilityLootTrackerPlugin#startUp()}
+ *     -------------------------------
+ *
+ *     {@link WildyAgilityLootTrackerPlugin#startUp()}
  *          {@link WildyAgilityLootTrackerPlugin#_init()}
  *              ...
  *              {@link net.runelite.client.callback.ClientThread#invoke(Runnable)}
  *                  {@link WildyAgilityLootTrackerPlugin#init_LootItems()}
+ *
+ *     -------------------------------
+ *
+ *     {@link WildyAgilityLootTrackerPlugin#shutDown()}
+ *          {@link WildyAgilityLootTrackerPlugin#endSession()}
+ *              {@link WildyAgilitySession#end()}
+ *          {@link WildyAgilityLootTrackerOverlay#onShutdown()}
+ *
+ *     -------------------------------
+ *
+ *     {@link WildyAgilityLootTrackerPlugin#onGameStateChanged(GameStateChanged)}
+ *          Marks an appropriate State Variable, nothing else required as state changes are detected in other ways
+ *
+ *     -------------------------------
+ *
+ *     {@link WildyAgilityLootTrackerPlugin#onConfigChanged(ConfigChanged)}
+ *          Not really handling this at present
+ *
+ *     -------------------------------
+ *
+ *     {@link WildyAgilityLootTrackerPlugin#onClientTick(ClientTick)}
+ *          Conditionally drives other eventTriggers
+ *
+ *          {@link WildyAgilityLootTrackerPlugin#onTick_GameArea()}
+ *              {@link WildyAgilityGameArea#onTick()}
+ *              ...
+ *              Conditionally one of:
+ *
+ *                  {@link WildyAgilityGameArea#onZoneEnter()}
+ *                      {@link WildyAgilityLootTrackerPlugin#onZoneEnter()}
+ *                          Marks an appropriate State Variable, changes are detected in other ways
+ *
+ *                  {@link WildyAgilityGameArea#onZoneExit()}
+ *                      {@link WildyAgilityLootTrackerPlugin#onZoneExit()}
+ *                          {@link WildyAgilityLootTrackerPlugin#stopRunning()}
+ *                          {@link WildyAgilityLootTrackerOverlay#onShutdown()}
+
+ *
+ *          {@link WildyAgilityLootTrackerPlugin#onTick_PluginCheckReady()}
+ *              {@link WildyAgilityLootTrackerPlugin#checkAllReady()}
+ *                  {@link WildyAgilityLootTrackerPlugin#checkReadyToRun()}
+ *                      {@link WildyAgilityLootTrackerPlugin#checkGameStateReady()}
+ *                      {@link WildyAgilityLootTrackerPlugin#checkUserLoginScreen()}
+ *                      {@link WildyAgilityLootTrackerPlugin#checkUserLoaded()}
+ *                      {@link WildyAgilityLootTrackerPlugin#checkUserReady()}
+ *                      {@link WildyAgilityLootTrackerPlugin#checkSessionReady()}
+ *                      {@link WildyAgilityLootTrackerPlugin#checkZoneReady()}
+ *                      ...
+ *                      {@link WildyAgilityLootTrackerPlugin#onReadyToRun()}
+ *                          {@link WildyAgilityLootTrackerPlugin#startRunning()}
+ *
+ *     -------------------------------
+ *
+ *     {@link WildyAgilityLootTrackerPlugin#onChatMessage(ChatMessage)}
+ *          Invokes chatParser methods, not a big deal...
+ *
+ *     -------------------------------
  * </pre>
  *
  */

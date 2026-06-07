@@ -149,11 +149,70 @@ extends net.runelite.client.plugins.Plugin</pre>
 
  <h2>Lifecycle (as I understand it)</h2>
  <pre>
-      <a href="#startUp()"><code>startUp()</code></a>
+     -------------------------------
+
+     <a href="#startUp()"><code>startUp()</code></a>
           <a href="#_init()"><code>_init()</code></a>
               ...
               <code>ClientThread.invoke(Runnable)</code>
                   <a href="#init_LootItems()"><code>init_LootItems()</code></a>
+
+     -------------------------------
+
+     <a href="#shutDown()"><code>shutDown()</code></a>
+          <a href="#endSession()"><code>endSession()</code></a>
+              <a href="WildyAgilitySession.html#end()"><code>WildyAgilitySession.end()</code></a>
+          <a href="WildyAgilityLootTrackerOverlay.html#onShutdown()"><code>WildyAgilityLootTrackerOverlay.onShutdown()</code></a>
+
+     -------------------------------
+
+     <a href="#onGameStateChanged(net.runelite.api.events.GameStateChanged)"><code>onGameStateChanged(GameStateChanged)</code></a>
+          Marks an appropriate State Variable, nothing else required as state changes are detected in other ways
+
+     -------------------------------
+
+     <a href="#onConfigChanged(net.runelite.client.events.ConfigChanged)"><code>onConfigChanged(ConfigChanged)</code></a>
+          Not really handling this at present
+
+     -------------------------------
+
+     <a href="#onClientTick(net.runelite.api.events.ClientTick)"><code>onClientTick(ClientTick)</code></a>
+          Conditionally drives other eventTriggers
+
+          <a href="#onTick_GameArea()"><code>onTick_GameArea()</code></a>
+              <a href="WildyAgilityGameArea.html#onTick()"><code>WildyAgilityGameArea.onTick()</code></a>
+              ...
+              Conditionally one of:
+
+                  <a href="WildyAgilityGameArea.html#onZoneEnter()"><code>WildyAgilityGameArea.onZoneEnter()</code></a>
+                      <a href="#onZoneEnter()"><code>onZoneEnter()</code></a>
+                          Marks an appropriate State Variable, changes are detected in other ways
+
+                  <a href="WildyAgilityGameArea.html#onZoneExit()"><code>WildyAgilityGameArea.onZoneExit()</code></a>
+                      <a href="#onZoneExit()"><code>onZoneExit()</code></a>
+                          <a href="#stopRunning()"><code>stopRunning()</code></a>
+                          <a href="WildyAgilityLootTrackerOverlay.html#onShutdown()"><code>WildyAgilityLootTrackerOverlay.onShutdown()</code></a>
+
+
+          <a href="#onTick_PluginCheckReady()"><code>onTick_PluginCheckReady()</code></a>
+              <a href="#checkAllReady()"><code>checkAllReady()</code></a>
+                  <a href="#checkReadyToRun()"><code>checkReadyToRun()</code></a>
+                      <a href="#checkGameStateReady()"><code>checkGameStateReady()</code></a>
+                      <a href="#checkUserLoginScreen()"><code>checkUserLoginScreen()</code></a>
+                      <a href="#checkUserLoaded()"><code>checkUserLoaded()</code></a>
+                      <a href="#checkUserReady()"><code>checkUserReady()</code></a>
+                      <a href="#checkSessionReady()"><code>checkSessionReady()</code></a>
+                      <a href="#checkZoneReady()"><code>checkZoneReady()</code></a>
+                      ...
+                      <a href="#onReadyToRun()"><code>onReadyToRun()</code></a>
+                          <a href="#startRunning()"><code>startRunning()</code></a>
+
+     -------------------------------
+
+     <a href="#onChatMessage(net.runelite.api.events.ChatMessage)"><code>onChatMessage(ChatMessage)</code></a>
+          Invokes chatParser methods, not a big deal...
+          
+     -------------------------------
  </pre></div>
 </li>
 </ul>
