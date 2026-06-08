@@ -1,5 +1,6 @@
 # Wildy Agility Loot Tracker
 
+## General Information
 This document is currently a work-in-progress. Expect it to be incomplete and constantly changing. 
 
 For now most everything is under [main/com.lita](src/main/java/com/lita) package. 
@@ -17,6 +18,31 @@ You can see an early example of it in action here:
 In time I hope to add a runelite sidepanel and perhaps make it configurable whether to display as an overlay,
 a side panel, or both. 
 
+---
+## Repository Structure
+### Base Directories
+  - [./](.) - This repo [https://github.com/Mr920/WildyAgilityLootTracker/tree/main](https://github.com/Mr920/WildyAgilityLootTracker/tree/main)
+  - [docs/](docs) - javadoc base for [https://mr920.github.io/WildyAgilityLootTracker/](https://mr920.github.io/WildyAgilityLootTracker/)
+### Build Tools
+  - Gradle
+    - [gradlew.bat](gradlew.bat) - main invoker script
+    - [gradle/wrapper/](gradle/wrapper) - application dependencies
+    - [settings.gradle](settings.gradle) - Project Settings
+    - [build.gradle](build.gradle) -  Project Build Script
+### Source Sets
+  - Main
+    - [src/main/java/](src/main/java)
+    - [src/main/resources/](src/main/resources)
+  - Test
+    - [src/test/java/](src/test/java)
+### Misc - Things not pertinent to the plugin, but may be useful for studies or development operations
+  - [misc/images](misc/images) - assets for the readme and stuff
+  - [misc/notes](misc/notes) - to help myself and others make sense of what is going on here
+  - [misc/utils](misc/utils) - helpful stuff to fascilitate the build, dev environment, or other auxillary operations
+### Project Dependencies
+  - [runelite-plugin.properties](runelite-plugin.properties) => unknown function
+### Dev / Quality-of-Life
+  - [.gitignore](.gitignore) - list of all files of an operational nature that are used in building this thing but are unecessary or harmful to publish
 ---
 
 ## Some rudimentary JavaDocs are available.
