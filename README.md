@@ -12,7 +12,7 @@ to simplify.
 The main function of this plugin is to create an overlay showing what loot you have accumulated from your wildy laps
 inside your loot bag, without you having to stop and open the loot bag to check every few minutes. 
 You can see an early example of it in action here:
-![WorkInProgress_ExampleScreenshot](images/WIP-ExampleOverlay.png)
+![WorkInProgress_ExampleScreenshot](misc/images/WIP-ExampleOverlay.png)
 
 In time I hope to add a runelite sidepanel and perhaps make it configurable whether to display as an overlay,
 a side panel, or both. 
@@ -32,7 +32,7 @@ a side panel, or both.
     - [WildyAgilityLootTrackerOverlay](https://mr920.github.io/WildyAgilityLootTracker/com/lita/WildyAgilityLootTrackerOverlay.html) - Everything related to the display structure, the overlay's panelComponents, etc
     - [WildyAgilityChatParser](https://mr920.github.io/WildyAgilityLootTracker/com/lita/WildyAgilityChatParser.html) - As simple as it sounds. Just a regex parser-module to take GAME_MESSAGE type chatMessages and pull out the valuable data from the messages that match the pattern of 1 of the 3 primary Wilderness Agility format chat messages that we are looking for.
     - [WildyAgilityGameArea](https://mr920.github.io/WildyAgilityLootTracker/com/lita/WildyAgilityGameArea.html) - the core active game area in which this plugin responds to. This module will track when you Enter or Exit this "Zone". See additional screenshot below. Courtesy of [This Website](https://mejrs.github.io/osrs?m=-1&z=2&p=0&x=3034&y=3929&layer=labels)
-      ![Active Agility Zone Area](images/ZoneArea.png)
+      ![Active Agility Zone Area](misc/images/ZoneArea.png)
     - [WildyAgilitySession](https://mr920.github.io/WildyAgilityLootTracker/com/lita/WildyAgilitySession.html) - Work in progress session-management and tracking object. Mostly a placeholder for now. More features coming soon.
     - [WildyAgilityDebugHelper](https://mr920.github.io/WildyAgilityLootTracker/com/lita/WildyAgilityDebugHelper.html) - Not much to see here. Just some quality-of-life functions and things. 
     - [LtaLootItemImage](https://mr920.github.io/WildyAgilityLootTracker/com/lita/LtaLootItemImage.html) - Stupid very basic little wrapper for ImageComponent that is hardly worth mentioning
@@ -60,16 +60,16 @@ a side panel, or both.
 This all started when I setup a splunk instance to ingest RuneLite client, game, and chat logs. I noticed that you could
 parse out the logs with some simple regex and then use that to create some very neat metrics and things. 
 Splunk allows you to search logs like so:
-![Splunk Search](images/Inspiration-SplunkSearch.png)
+![Splunk Search](misc/images/Inspiration-SplunkSearch.png)
 and then gives you the ability to parse log entries into fields:
-![Parsed Log Entry](images/Inspiration-SplunkEventParsed.PNG)
+![Parsed Log Entry](misc/images/Inspiration-SplunkEventParsed.PNG)
 and then to immediately start pulling statistics out based upon those fields:
-![Field Statistics 1](images/Inspiration-SplunkFieldStatistics.PNG) 
-![Field Statistics 2](images/Inspiration-SplunkFieldStatistics2.PNG)
+![Field Statistics 1](misc/images/Inspiration-SplunkFieldStatistics.PNG) 
+![Field Statistics 2](misc/images/Inspiration-SplunkFieldStatistics2.PNG)
 
 and you can even turn around and use those statistics to generate charts and things:
-![Chart 1](images/Inspiration-SplunkGraphs-Combined.png)
-![Chart 2](images/Inspiration-SplunkGraphs.png)
+![Chart 1](misc/images/Inspiration-SplunkGraphs-Combined.png)
+![Chart 2](misc/images/Inspiration-SplunkGraphs.png)
 
 After realizing that these log messages were consistent enough in their structure to be parsed in this way, I realized
 that a plugin could be made to do the same thing. It could just parse out the gameMessages and use the data to keep

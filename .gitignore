@@ -25,9 +25,9 @@
 .gradle/8.14.4/fileHashes/resourceHashesCache.bin
 .gradle/8.14.4/gc.properties
 .gradle/vcs-1/gc.properties
-build/tmp/javadoc/javadoc.options
-build/tmp/compileJava/previous-compilation-data.bin
-build/tmp/compileJava/compileTransaction/stash-dir/
 build/classes/
-build/resources/main/logback.xml
+build/generated/
+build/resources/
+build/tmp/compileJava/
+build/tmp/javadoc/
 .idea/
