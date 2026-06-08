@@ -1,4 +1,5 @@
 .gradle/buildOutputCleanup/buildOutputCleanup.lock
+.gradle/file-system.probe
 .gradle/8.10/executionHistory/executionHistory.bin
 .gradle/8.10/executionHistory/executionHistory.lock
 .gradle/8.10/fileHashes/fileHashes.bin
