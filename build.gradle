@@ -16,6 +16,10 @@ def runeLiteVersion      = 'latest.release'
 
 project.version = pluginProjectVersion
 
+// https://docs.gradle.org/8.10/javadoc/org/gradle/api/Project.html#repositories(groovy.lang.Closure)
+// https://docs.gradle.org/8.10/javadoc/org/gradle/api/artifacts/dsl/RepositoryHandler.html#maven(groovy.lang.Closure)
+// https://docs.gradle.org/8.10/javadoc/org/gradle/api/artifacts/repositories/ArtifactRepository.html#content(org.gradle.api.Action)
+// https://docs.gradle.org/8.10/javadoc/org/gradle/api/artifacts/repositories/InclusiveRepositoryContentDescriptor.html#includeGroupByRegex(java.lang.String)
 repositories {
 	mavenLocal()
 	maven {
@@ -47,7 +51,7 @@ tasks.withType(JavaCompile).configureEach {
 	options.encoding = 'UTF-8'
 //	options.release.set(11)
 }
-tasks.withType(Javadoc) {
+tasks.withType(Javadoc).configureEach {
 	destinationDir = file("${projectDir}/docs")
 }
 
