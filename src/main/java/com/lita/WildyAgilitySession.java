@@ -51,6 +51,7 @@ public class WildyAgilitySession {
         if (! hasStarted()) {
             this.startDt = LocalDateTime.now();
             log.debug("Started Session " + Integer.toString(this.num, 10));
+            this.plugin.debugHelper.queueChatMessage("Started Session " + Integer.toString(this.num, 10));
         }
         else {
             if (! hasFinished()){

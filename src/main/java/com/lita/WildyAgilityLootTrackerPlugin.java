@@ -304,6 +304,7 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
     protected void shutDown() throws Exception {
         if (! _s_stoppedPlugin) {
             this._s_stoppedPlugin = true;
+            this._s_startedPlugin = false;
             log.debug("shutDown():START");
             //this.running = false;
             endSession();
@@ -345,7 +346,7 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
             debugLog_statusCall("checkGameStateReady()", "_s_GS_LOGGED_IN", "false"); return false;
         }
         else {
-            debugLog_statusCall("checkGameStateReady()", "_s_GS_LOGGED_IN", "true");
+            //debugLog_statusCall("checkGameStateReady()", "_s_GS_LOGGED_IN", "true");
         }
         return this._s_GS_LOGGED_IN;
     }
@@ -374,7 +375,10 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
     }
     public boolean checkSessionReady(){
         if (! this._s_sessionReady){
-            if (this.currentSession.isActive()){ debugLog_statusCall("checkSessionReady()", "currentSession.isActive()", "true"); return false; }
+            if (this.currentSession.isActive()){
+                debugLog_statusCall("checkSessionReady()", "currentSession.isActive()", "true");
+                return false;
+            }
             else {
                 this._s_sessionReady = true;
                 debugLog_statusCall("checkSessionReady()", "_s_sessionReady", "true");
@@ -395,7 +399,10 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
     public boolean checkZoneReady(){
         if (! _s_zoneReady){
             //if (! detectPlayerInZone()){ log.debug("checkZoneReady() -> detectPlayerInZone => false"); return false; } // this is expensive and not really required since I have the GameArea doing its own monitoring....
-            if (! _s_inZone){            debugLog_statusCall("checkZoneReady()", "_s_inZone", "false"); return false; }
+            if (! _s_inZone){
+                //debugLog_statusCall("checkZoneReady()", "_s_inZone", "false");
+                return false;
+            }
             else {
                 this._s_zoneReady = true;
                 debugLog_statusCall("checkZoneReady()", "_s_zoneReady", "true");
@@ -607,12 +614,4 @@ public class WildyAgilityLootTrackerPlugin extends Plugin
     }
 }
 
-/*  Execution (because my dumbass forgets everything)
 
-        .\gradlew.bat clean --info
-        .\gradlew.bat javadoc --info
-        .\gradlew.bat build --info
-        .\gradlew.bat runTest --info
-        .\gradlew.bat runMain --info
-        .\gradlew.bat shadowJar --info
-*/
