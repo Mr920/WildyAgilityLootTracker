@@ -28,6 +28,13 @@
 build/classes/
 build/generated/
 build/resources/
+build/tmp/.cache/
 build/tmp/compileJava/
+build/tmp/compileTestJava/
+build/tmp/shadowJar/
 build/tmp/javadoc/
 .idea/
+misc/jars/
+misc/utils/
+misc/notes/RUNELITE_REPO_NOTES.md
+src/main/resources/logback.xml
