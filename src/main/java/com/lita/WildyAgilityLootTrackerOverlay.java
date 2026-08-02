@@ -1,181 +1,113 @@
 package com.lita;
-
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.util.List;
-import java.time.Instant;
 import javax.inject.Inject;
-import static net.runelite.api.MenuAction.RUNELITE_OVERLAY_CONFIG;
-import static net.runelite.client.ui.overlay.OverlayManager.OPTION_CONFIGURE;
 import net.runelite.client.ui.overlay.OverlayPanel;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.components.LayoutableRenderableEntity;
 import net.runelite.client.ui.overlay.components.TitleComponent;
-import net.runelite.client.ui.overlay.components.ImageComponent;
 import net.runelite.client.ui.overlay.components.ComponentOrientation;
-import net.runelite.client.ui.overlay.components.LineComponent;
 import net.runelite.client.ui.overlay.components.PanelComponent;
-import net.runelite.api.gameval.ItemID;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
-public class WildyAgilityLootTrackerOverlay extends OverlayPanel
-{
+public class WildyAgilityLootTrackerOverlay extends OverlayPanel {
+    private static final                    int STANDARD_INVENTORY_ITEM_WIDTH  = 32;
+    private static final                    int STANDARD_INVENTORY_ITEM_HEIGHT = 32;
+    public  static final                    int ROW_WIDTH                      = STANDARD_INVENTORY_ITEM_WIDTH * 4;
+    public  static final                    int ROW_HEIGHT                     = STANDARD_INVENTORY_ITEM_HEIGHT;
+
+    public  static Dimension getRowDimension(){ return new Dimension(ROW_WIDTH, ROW_HEIGHT); }
+    public  static     Point getRowGap(){       return new Point(4, 4);                }
+
     private final WildyAgilityLootTrackerPlugin plugin;
     private final WildyAgilityLootTrackerConfig config;
-
-    private final int STANDARD_INVENTORY_ITEM_WIDTH  = 32;
-    private final int STANDARD_INVENTORY_ITEM_HEIGHT = 32;
-
-    public long reRenderScheduledTime  = 0;
-    public long lastComponentBuildTime = 0;
-    public long lastFrameDrawTime      = 0;
-    public int  componentsBuildNum     = 0;
-
-    public boolean shouldReRender      = false; // probably going to deprecate this soon
-    public boolean isShutDown          = false;
-
-    public List<LayoutableRenderableEntity> _childCmps    = null;
-    public PanelComponent                   _supplyRow    = null;
-    public PanelComponent                   _steelRow     = null;
-    public PanelComponent                   _mithrilRow   = null;
-    public PanelComponent                   _adamantRow   = null;
-    public PanelComponent                   _runeRow      = null;
-    public TitleComponent                   _lootValTitle = null;
-
-    public void logRenderTiming(){
-        long buildElapsed  = lastComponentBuildTime - reRenderScheduledTime;
-        long renderElapsed = lastFrameDrawTime - lastComponentBuildTime;
-        log.debug(String.format("Component Build completed %d ms after re-render scheduled, the render took an additional %d ms\r\n", buildElapsed, renderElapsed));
-    }
-    public long getCurrentTimeMs(){
-        return Instant.now().toEpochMilli();
-    }
-    public void scheduleReRender(){
-        this.shouldReRender = true;
-        this.reRenderScheduledTime = getCurrentTimeMs();
-        log.debug("Scheduled Re-Render");
-    }
-    public void markRenderComplete(){
-        this.shouldReRender = false;
-        this.lastFrameDrawTime = getCurrentTimeMs();
-        logRenderTiming();
-    }
-    public void onDataMutation(LtaLootItem[] mutatedObjects){
-        log.debug("Data Mutation Detected");
-        updateComponents(mutatedObjects[0], mutatedObjects[1]);
-        // scheduleReRender(); // now that we are updating components, we should not still need to re-render everything
-    }
+    public                              boolean isShutDown                     = false;
+    public     List<LayoutableRenderableEntity> _childCmps                     = null;
+    public                       PanelComponent _supplyRow                     = null;
+    public                       PanelComponent _steelRow                      = null;
+    public                       PanelComponent _mithrilRow                    = null;
+    public                       PanelComponent _adamantRow                    = null;
+    public                       PanelComponent _runeRow                       = null;
+    public                       TitleComponent _lootValTitle                  = null;
 
     @Inject
-    private WildyAgilityLootTrackerOverlay(WildyAgilityLootTrackerPlugin _plugin, WildyAgilityLootTrackerConfig _config){
+    private               WildyAgilityLootTrackerOverlay(WildyAgilityLootTrackerPlugin _plugin, WildyAgilityLootTrackerConfig _config){
         super(_plugin);
-        this.plugin = _plugin;
-        this.config = _config;
+        plugin = _plugin;
+        config = _config;
         setPosition(OverlayPosition.TOP_LEFT);
-        /*
-            setClearChildren(false) is necessary for giving this thing object-caching abilities which will help cut down
-            on how many calls we make in our render() method
-
-            if setClearChildren(true), what happens is that the panel is drawn, then the children are removed
-            then on the very next frame, if you don't re-add all the children, then everything is lost and the panel
-            will disappear
-
-            by doing setClearChildren(false), we can make it so that the object structure persists between render() calls
-            Which means we only have to clear the children and rebuild the UI components when something changes in the
-            underlying data, rather than having to rebuild everything on every single frame
-
-            it looks like this is saving about 23 ms of real-world execution time PER FRAME in my little test
-        */
         setClearChildren(false);
-        //scheduleReRender();
-        //addMenuEntry(RUNELITE_OVERLAY_CONFIG, OPTION_CONFIGURE, "WildyAgilityLootTrackerPlugin overlay");
     }
-
+    public PanelComponent getNewRowComponent(){
+        PanelComponent rowCmp = new PanelComponent();
+        rowCmp.setOrientation(ComponentOrientation.HORIZONTAL);
+        rowCmp.setPreferredSize(getRowDimension());
+        rowCmp.setGap(getRowGap());
+        return rowCmp;
+    }
     public PanelComponent makeSupplyRow(){
-        this._supplyRow = new PanelComponent();
-        this._supplyRow.setOrientation(ComponentOrientation.HORIZONTAL);
-        this._supplyRow.setPreferredSize(new Dimension((STANDARD_INVENTORY_ITEM_WIDTH * 4), STANDARD_INVENTORY_ITEM_HEIGHT));
-        this._supplyRow.setGap(new Point(4, 4));
-        List<LayoutableRenderableEntity> panelChildren = this._supplyRow.getChildren();
-        if (this.config.getShowSupplies()) {
-            for (LtaLootItem supplyItem : this.plugin.supplies) {
+        _supplyRow = getNewRowComponent();
+        List<LayoutableRenderableEntity> panelChildren = _supplyRow.getChildren();
+        if (config.getShowSupplies()) {
+            for (LtaLootItem supplyItem : plugin.supplies) {
                 panelChildren.add(new LtaLootItemImage(supplyItem));
             }
         }
-        //this._supplyRow.setBackgroundColor(new Color(204, 94, 66));
-        return this._supplyRow;
+        return _supplyRow;
+    }
+    public           void setArmourRowByType(PanelComponent _armourRow, int armourType){
+        switch (armourType){
+            case LtaLootItem.TYPE_STEEL:   _steelRow   = _armourRow; break;
+            case LtaLootItem.TYPE_MITHRIL: _mithrilRow = _armourRow; break;
+            case LtaLootItem.TYPE_ADAMANT: _adamantRow = _armourRow; break;
+            case LtaLootItem.TYPE_RUNE:    _runeRow    = _armourRow; break;
+        }
+    }
+    public PanelComponent getArmourRowByType(int armourType){
+        switch (armourType){
+            case LtaLootItem.TYPE_STEEL:   return _steelRow;
+            case LtaLootItem.TYPE_MITHRIL: return _mithrilRow;
+            case LtaLootItem.TYPE_ADAMANT: return _adamantRow;
+            case LtaLootItem.TYPE_RUNE:    return _runeRow;
+            default:                       return null;
+        }
     }
     public PanelComponent makeArmourRow(int[] armourTypeIds, int armourType){
-        PanelComponent armourRow = new PanelComponent();
-        switch (armourType){
-            case LtaLootItem.TYPE_STEEL:   this._steelRow   = armourRow; break;
-            case LtaLootItem.TYPE_MITHRIL: this._mithrilRow = armourRow; break;
-            case LtaLootItem.TYPE_ADAMANT: this._adamantRow = armourRow; break;
-            case LtaLootItem.TYPE_RUNE:    this._runeRow    = armourRow; break;
-        }
-        armourRow.setOrientation(ComponentOrientation.HORIZONTAL);
-        armourRow.setPreferredSize(new Dimension((STANDARD_INVENTORY_ITEM_WIDTH * 4), STANDARD_INVENTORY_ITEM_HEIGHT));
-        armourRow.setGap(new Point(4, 4));
+        PanelComponent armourRow = getNewRowComponent();
+        setArmourRowByType(armourRow, armourType);
         List<LayoutableRenderableEntity> panelChildren = armourRow.getChildren();
         for (int armourTypeId: armourTypeIds){
-            LtaLootItem armourItem = this.plugin.getMatchingArmourItem(armourTypeId);
-            if (armourItem.display){
-                panelChildren.add(new LtaLootItemImage(armourItem));
-            }
+            LtaLootItem armourItem = plugin.getMatchingArmourItem(armourTypeId);
+            if (armourItem.display){ panelChildren.add(new LtaLootItemImage(armourItem)); }
         }
         return armourRow;
     }
     public TitleComponent makeLootValTitleCmp(){
-        this._lootValTitle = TitleComponent.builder().text(this.plugin.currentLootValStr).color(Color.GREEN).build();
-        return this._lootValTitle;
+        _lootValTitle = TitleComponent.builder().text(plugin.currentLootValStr).color(Color.GREEN).build();
+        return _lootValTitle;
     }
-
-    public void configurePanelComponent(){
+    public           void configurePanelComponent(){
         panelComponent.setOrientation(ComponentOrientation.VERTICAL);
-        this._childCmps = panelComponent.getChildren();
-        panelComponent.setPreferredSize(new Dimension((STANDARD_INVENTORY_ITEM_WIDTH * 4), 0));
-        //panelComponent.setGap(new Point(0, 4));
+        _childCmps = panelComponent.getChildren();
+        panelComponent.setPreferredSize(new Dimension(ROW_WIDTH, 0));
     }
-    public void buildChildComponents(){
-
-        this._childCmps.add(makeSupplyRow());
-        //this._childCmps.add(LineComponent.builder().build());
-
-        // This may seem convoluted, but we need to lookup the existing objects by id, so that we are using the existing objects and not creating new ones
-        this._childCmps.add(makeArmourRow(LtaLootItem.getSteelArmourItemIds(),   LtaLootItem.TYPE_STEEL));
-        //this._childCmps.add(LineComponent.builder().build());
-        this._childCmps.add(makeArmourRow(LtaLootItem.getMithrilArmourItemIds(), LtaLootItem.TYPE_MITHRIL));
-        //this._childCmps.add(LineComponent.builder().build());
-        this._childCmps.add(makeArmourRow(LtaLootItem.getAdamantArmourItemIds(), LtaLootItem.TYPE_ADAMANT));
-        //this._childCmps.add(LineComponent.builder().build());
-        this._childCmps.add(makeArmourRow(LtaLootItem.getRuneArmourItemIds(),    LtaLootItem.TYPE_RUNE));
-        //this._childCmps.add(LineComponent.builder().build());
-
-        this._childCmps.add(makeLootValTitleCmp());
+    public           void buildChildComponents(){
+        _childCmps.add(makeSupplyRow());
+        _childCmps.add(makeArmourRow(LtaLootItem.getSteelArmourItemIds(),   LtaLootItem.TYPE_STEEL));
+        _childCmps.add(makeArmourRow(LtaLootItem.getMithrilArmourItemIds(), LtaLootItem.TYPE_MITHRIL));
+        _childCmps.add(makeArmourRow(LtaLootItem.getAdamantArmourItemIds(), LtaLootItem.TYPE_ADAMANT));
+        _childCmps.add(makeArmourRow(LtaLootItem.getRuneArmourItemIds(),    LtaLootItem.TYPE_RUNE));
+        _childCmps.add(makeLootValTitleCmp());
     }
-    public void buildComponents(){
-        log.debug("Building Components...");
+    public           void buildComponents(){
         configurePanelComponent();
-        this._childCmps.clear();
+        _childCmps.clear();
         buildChildComponents();
-        this.componentsBuildNum++;
-        this.lastComponentBuildTime = getCurrentTimeMs();
     }
-    public void rebuildComponents(){
-        if (this.componentsBuildNum > 0){ log.debug("Re-creating component structures"); }
-        buildComponents();
-    }
-
-
-    public void updateLootValueStr(){
-        log.debug("updating Loot Value Title Component's text value...");
-        this._lootValTitle.setText(this.plugin.currentLootValStr);
-    }
-    public void updateItemImage(PanelComponent itemRow, LtaLootItem mutatedItemObject){
-        log.debug(String.format("updating component row with a new image for item -> %s", mutatedItemObject.name));
+    public           void updateLootValueStr(){ _lootValTitle.setText(plugin.currentLootValStr); }
+    public           void updateItemImage(PanelComponent itemRow, LtaLootItem mutatedItemObject){
         List<LayoutableRenderableEntity> itemImages = itemRow.getChildren();
         for (LayoutableRenderableEntity itemImage: itemImages){
             if (((LtaLootItemImage) itemImage).targetLootItem.hashCode() == mutatedItemObject.hashCode()){
@@ -184,73 +116,28 @@ public class WildyAgilityLootTrackerOverlay extends OverlayPanel
             }
         }
     }
-    public void updateSupplyRow(LtaLootItem mutatedSupplyObj){
-        log.debug("updating Supply row...");
-        updateItemImage(this._supplyRow, mutatedSupplyObj);
-    }
-    public void updateArmourRow(LtaLootItem mutatedArmourObj){
-        log.debug("updating Armour row...");
-        PanelComponent armourRow = null;
-        switch(mutatedArmourObj.getArmourType()){
-            case LtaLootItem.TYPE_STEEL:   armourRow = this._steelRow;   break;
-            case LtaLootItem.TYPE_MITHRIL: armourRow = this._mithrilRow; break;
-            case LtaLootItem.TYPE_ADAMANT: armourRow = this._adamantRow; break;
-            case LtaLootItem.TYPE_RUNE:    armourRow = this._runeRow;    break;
-        }
+    public           void updateSupplyRow(LtaLootItem mutatedSupplyObj){ updateItemImage(_supplyRow, mutatedSupplyObj); }
+    public           void updateArmourRow(LtaLootItem mutatedArmourObj){
+        PanelComponent armourRow = getArmourRowByType(mutatedArmourObj.getArmourType());
         if (armourRow == null){ return; } // perhaps we should be throwing an exception...
         updateItemImage(armourRow, mutatedArmourObj);
     }
-    public void updateComponents(LtaLootItem mutatedSupplyItem, LtaLootItem mutatedArmourItem){
-        log.debug("Updating components...");
+    public           void updateComponents(LtaLootItem mutatedSupplyItem, LtaLootItem mutatedArmourItem){
         updateSupplyRow(mutatedSupplyItem);
         updateArmourRow(mutatedArmourItem);
         updateLootValueStr();
-        log.debug("All mutated items have had their corresponding components updated!\r\n");
     }
-
-    public void onShutdown(){
-        log.debug("onShutDown()");
-        this.panelComponent.getChildren().clear();
-        this.plugin.overlayManager.remove(this);
-        //this.shouldReRender = true;
-        this.isShutDown     = true;
-    }
-    public void onStartUp(){
-        log.debug("onStartUp()");
-        if (this.isShutDown){ this.isShutDown = false; }
+    public           void onDataMutation(LtaLootItem[] mutatedObjects){ updateComponents(mutatedObjects[0], mutatedObjects[1]);     }
+    public           void onStartUp(){
+        if (isShutDown){ isShutDown = false; }
         buildComponents();
-        this.plugin.overlayManager.add(this);
+        plugin.overlayManager.add(this);
     }
-
-    /* Eventually we should move away from rebuilding UI object structures even when the data mutates
-       There's no need to rebuild everything. We could get away with merely replacing the updated object sprites
-       and replacing the final text component's text.
-
-       But this will require logic to determine which sprite changed so that we only replace individual sprites
-       rather than redrawing entire subpanels full of multiple sprites
-    */
+    public           void onShutdown(){
+        panelComponent.getChildren().clear();
+        plugin.overlayManager.remove(this);
+        isShutDown = true;
+    }
     @Override
-    public Dimension render(Graphics2D graphics){
-        /*
-            So I'm realizing there's virtually never any reason to do anything within the render method except call parent's render
-            All "component logic" can be done in response to initialization or data mutation events, and will simply get picked up
-            on the next call to render
-
-            But there's no reason it has to be done within a render call, not even occasionally
-        */
-        return super.render(graphics);
-        /*
-        if (this.shouldReRender && (!this.isShutDown)){
-            rebuildComponents();
-            Dimension renderedDimension = super.render(graphics);
-            markRenderComplete();
-            return renderedDimension;
-        }
-        else {
-            return super.render(graphics);
-        }
-        */
-    }
-
-
+    public      Dimension render(Graphics2D graphics){ return super.render(graphics); }
 }
