@@ -34,6 +34,8 @@ public class WildyAgilitySession {
         /* save(); */
         for (LtaLootItem sItm: plugin.supplies){ sItm.haveQuantity = 0; }
         for (LtaLootItem aItm: plugin.armour){   aItm.haveQuantity = 0; }
+        plugin.currentLootValStr = plugin.getTotalLootValueStr();
+        plugin.overlay.updateLootValueStr();
     }
   //public void save(){} // I will come back and implement this later
     public boolean hasStarted(){  return (this.startDt != null); }
