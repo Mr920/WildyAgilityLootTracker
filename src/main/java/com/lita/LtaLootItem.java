@@ -1,7 +1,8 @@
 package com.lita;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.client.util.AsyncBufferedImage;
-
+import net.runelite.client.game.ItemManager;
+import javax.inject.Inject;
 public class LtaLootItem {
     public static final String TYPE_SUPPLY  = "Supply";
     public static final String TYPE_ARMOUR  = "Armour";
@@ -37,7 +38,7 @@ public class LtaLootItem {
     public static final String ITEM_NAME_RUNE_MED_HELM          = "Rune med helm";
     public static final String ITEM_NAME_RUNE_CHAINBODY         = "Rune chainbody";
     public static final String ITEM_NAME_RUNE_KITESHIELD        = "Rune kiteshield";
-
+    @Inject public static ItemManager ITEM_MANAGER;
     public static              int[] getSupplyItemIds(){        return SUPPLY_ITEM_IDS;         }
     public static              int[] getSteelArmourItemIds(){   return STEEL_ARMOUR_ITEM_IDS;   }
     public static              int[] getMithrilArmourItemIds(){ return MITHRIL_ARMOUR_ITEM_IDS; }
@@ -45,8 +46,8 @@ public class LtaLootItem {
     public static              int[] getRuneArmourItemIds(){    return RUNE_ARMOUR_ITEM_IDS;    }
     public static              int[] getAllArmourItemIds(){     return ALL_ARMOUR_ITEM_IDS;     }
     public static        LtaLootItem getNewObjectFromId(int itemID){ return new LtaLootItem(itemID); }
-    public static                int getItemPrice(int itemID){  return WildyAgilityLootTrackerPlugin.ItemManager.getItemPrice(itemID); }
-    public static AsyncBufferedImage getImage(int itemID){      return WildyAgilityLootTrackerPlugin.ItemManager.getImage(itemID);     }
+    public static                int getItemPrice(int itemID){  return ITEM_MANAGER.getItemPrice(itemID); }
+    public static AsyncBufferedImage getImage(int itemID){      return ITEM_MANAGER.getImage(itemID);     }
     public static             String getItemName(int itemID){
         switch(itemID){
             case ItemID.BLIGHTED_ANGLERFISH:    return ITEM_NAME_BLIGHTED_ANGLERFISH;
@@ -171,5 +172,5 @@ public class LtaLootItem {
     }
     public             String getTotalGpStr(){   return toBigGpStr(getTotalValue());             }
     public             String getPriceGpStr(){   return toSmallGpStr(price);                     }
-    public AsyncBufferedImage getQtyImage(){     return WildyAgilityLootTrackerPlugin.ItemManager.getImage(id, haveQuantity, true); }
+    public AsyncBufferedImage getQtyImage(){     return ITEM_MANAGER.getImage(id, haveQuantity, true); }
 }

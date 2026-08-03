@@ -7,7 +7,7 @@ import java.awt.*;
 
 public class WildyAgilityDebugHelper {
     public WildyAgilityLootTrackerPlugin plugin;
-    public WildyAgilityDebugHelper(WildyAgilityLootTrackerPlugin _plugin){ this.plugin = _plugin; }
+    public WildyAgilityDebugHelper(WildyAgilityLootTrackerPlugin _plugin){ plugin = _plugin; }
     public String getRunReportMessage(){
         final     String[]     msgPieces = {"WildyAgilityLootTrackerPlugin", " is ", "running", " and ", "ready", "."};
         ChatMessageBuilder   cMsgBuilder = new ChatMessageBuilder();;
@@ -38,7 +38,7 @@ public class WildyAgilityDebugHelper {
         return qMsgBuilder.build();
     }
     public void queueChatMessage(String message){
-        this.plugin.clientThread.invoke(() -> { this.plugin.chatMessageManager.queue(getQueuedMessage(message)); });
+        plugin.clientThread.invoke(() -> { plugin.chatMessageManager.queue(getQueuedMessage(message)); });
     }
     public void queueCallMessage(String callName, String message){ queueChatMessage(getCallMessage(callName, message)); }
     public void reportRunning(){ queueChatMessage(getRunReportMessage()); }
