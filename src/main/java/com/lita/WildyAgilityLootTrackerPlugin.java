@@ -13,7 +13,7 @@ import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
-
+import net.runelite.client.game.ItemManager;
 /* To-Do:
         [ ] Make this thing respect the config
         [ ] Session Management, complete with the ability to preserve historical information on the loot item quantities and prices from previous sessions
@@ -39,6 +39,7 @@ public class WildyAgilityLootTrackerPlugin extends Plugin {
     @Inject public              ChatMessageManager chatMessageManager;
     @Inject public                  OverlayManager overlayManager;
     @Inject public  WildyAgilityLootTrackerOverlay overlay;
+    @Inject public                     ItemManager itemManager;
             public             WildyAgilitySession currentSession         = null;
             public          WildyAgilityChatParser chatParser             = null;
             public            WildyAgilityGameArea activeGameZone         = null;
@@ -61,6 +62,7 @@ public class WildyAgilityLootTrackerPlugin extends Plugin {
         updateItemDisplayConfig(armour);
     }
     public        void init_LootItems(){
+        LtaLootItem.ITEM_MANAGER = itemManager;
         supplies = LtaLootItem.getSupplyItems();
         armour   = LtaLootItem.getAllArmourItems();
         updateItemDisplayConfigs();
@@ -70,7 +72,7 @@ public class WildyAgilityLootTrackerPlugin extends Plugin {
         chatParser     = new WildyAgilityChatParser(this);
         activeGameZone = new WildyAgilityGameArea(this);
         debugHelper    = new WildyAgilityDebugHelper(this);
-        clientThread.invoke(this::init_LootItems);
+        clientThread.invokeLater(this::init_LootItems);
     }
     public LtaLootItem getMatchingLootItem(int itemId, LtaLootItem[] searchList){
                 int index         = 0;
