@@ -127,7 +127,7 @@ public class WildyAgilityLootTrackerOverlay extends OverlayPanel {
         updateArmourRow(mutatedArmourItem);
         updateLootValueStr();
     }
-    public           void onDataMutation(LtaLootItem[] mutatedObjects){ updateComponents(mutatedObjects[0], mutatedObjects[1]);     }
+    public           void onDataMutation(WildyAgilityChatParser.Highlighted mutatedObjects){ updateComponents(mutatedObjects.updatedSupplyItem, mutatedObjects.updatedArmourItem);     }
     public           void onStartUp(){
         if (isShutDown){ isShutDown = false; }
         buildComponents();

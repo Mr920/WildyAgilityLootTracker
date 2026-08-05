@@ -90,7 +90,7 @@ public class WildyAgilityLootTrackerPlugin extends Plugin {
         updateLootItemPrices(supplies);
         updateLootItemPrices(armour);
     }
-    public        void onDataMutation(LtaLootItem[] mutatedObjects){
+    public        void onDataMutation(WildyAgilityChatParser.Highlighted mutatedObjects){
         currentLootValStr = getTotalLootValueStr();
         overlay.onDataMutation(mutatedObjects);
     }
