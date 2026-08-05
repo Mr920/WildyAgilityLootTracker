@@ -26,14 +26,11 @@ public class WildyAgilityChatParser {
         public  Matcher currentMatch = null;
         public   String matchedTxt   = null;
         public void onMatch(){}
+        public boolean findAndSet(){ matches = currentMatch.find(); if (matches){ matchedTxt = currentMatch.group(1); } return matches; }
         public boolean check(String chatMessage){
             parseMessage = chatMessage;
             currentMatch = pattern.matcher(parseMessage);
-            matches      = currentMatch.find();
-            if (matches){
-                matchedTxt = currentMatch.group(1);
-                onMatch();
-            }
+            if (findAndSet()){ onMatch(); }
             return matches;
         }
         public PatternParser(Pattern _pattern){ pattern = _pattern; }
@@ -50,20 +47,18 @@ public class WildyAgilityChatParser {
         @Override public void onMatch(){ plugin.onDataMutation(parseAwardMessage()); }
         public Award(Pattern _pattern){ super(_pattern); }
     }
+    public interface LootItemGetter { LtaLootItem getMatchingItem(int itemId); }
     public class Highlighted extends PatternParser {
         public LtaLootItem updatedSupplyItem;
         public LtaLootItem updatedArmourItem;
         public boolean parseLootItem(){ return itemParser.check(matchedTxt); }
+        public LtaLootItem parseLootItem(LootItemGetter itemGetter){ if (! parseLootItem()){ return null; } return updateQty(itemGetter.getMatchingItem(itemParser.ItemId)); }
         public LtaLootItem updateQty(LtaLootItem item){ item.haveQuantity += itemParser.Qty; return item; }
-        public LtaLootItem parseSupplyItem(){ if (! parseLootItem()){ return null; } return updateQty(plugin.getMatchingSupplyItem(itemParser.ItemId)); }
-        public LtaLootItem parseArmourItem(){ if (! parseLootItem()){ return null; } return updateQty(plugin.getMatchingArmourItem(itemParser.ItemId)); }
+        public LtaLootItem parseSupplyItem(){ return parseLootItem(plugin::getMatchingSupplyItem); }
+        public LtaLootItem parseArmourItem(){ return parseLootItem(plugin::getMatchingArmourItem); }
         @Override public void onMatch(){
             updatedSupplyItem = parseSupplyItem();
-            matches = currentMatch.find();
-            if (matches){
-                matchedTxt = currentMatch.group(1);
-                updatedArmourItem = parseArmourItem();
-            }
+            if (findAndSet()){ updatedArmourItem = parseArmourItem(); }
         }
         public Highlighted(Pattern _pattern){ super(_pattern); }
     }
