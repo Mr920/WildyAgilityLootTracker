@@ -4,7 +4,7 @@ import java.util.regex.Pattern;
 
 public class WildyAgilityChatParser {
     public static final Pattern pattern_LapCount  = Pattern.compile("Wilderness Agility lap count is: .col=ff0000.([0-9]+)");
-    public static final Pattern pattern_Award     = Pattern.compile("You have been awarded");
+    public static final Pattern pattern_Award     = Pattern.compile("You have been awarded(.+)");
     public static final Pattern pattern_Highlight = Pattern.compile("[<]col[=]ef1020[>]([^<]+)[<].col[>]");
     public static final Pattern pattern_Item      = Pattern.compile("([0-9]+) x (.+)");
     public static final Pattern pattern_Streak    = Pattern.compile("Wilderness Agility reward streak is: .col=ff0000.([0-9]+)");
