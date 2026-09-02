@@ -96,11 +96,11 @@ public class WildyAgilityLootTrackerOverlay extends OverlayPanel {
         panelComponent.setPreferredSize(new Dimension(ROW_WIDTH, 0));
     }
     public           void buildChildComponents(){
-        _childCmps.add(makeSupplyRow());
-        _childCmps.add(makeArmourRow(LtaLootItem.getSteelArmourItemIds(),   LtaLootItem.TYPE_STEEL));
-        _childCmps.add(makeArmourRow(LtaLootItem.getMithrilArmourItemIds(), LtaLootItem.TYPE_MITHRIL));
-        _childCmps.add(makeArmourRow(LtaLootItem.getAdamantArmourItemIds(), LtaLootItem.TYPE_ADAMANT));
-        _childCmps.add(makeArmourRow(LtaLootItem.getRuneArmourItemIds(),    LtaLootItem.TYPE_RUNE));
+        if (config.getShowSupplies()) { _childCmps.add(makeSupplyRow()); }
+        if (config.getShowSteelArmour()){ _childCmps.add(makeArmourRow(LtaLootItem.getSteelArmourItemIds(),   LtaLootItem.TYPE_STEEL)); }
+        if (config.getShowMithrilArmour()){ _childCmps.add(makeArmourRow(LtaLootItem.getMithrilArmourItemIds(), LtaLootItem.TYPE_MITHRIL)); }
+        if (config.getShowAdamantArmour()){ _childCmps.add(makeArmourRow(LtaLootItem.getAdamantArmourItemIds(), LtaLootItem.TYPE_ADAMANT)); }
+        if (config.getShowRuneArmour()){ _childCmps.add(makeArmourRow(LtaLootItem.getRuneArmourItemIds(),    LtaLootItem.TYPE_RUNE)); }
         _childCmps.add(makeLootValTitleCmp());
     }
     public           void buildComponents(){
