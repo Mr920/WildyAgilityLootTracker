@@ -23,7 +23,9 @@ public class WildyAgilityLootTrackerOverlay extends OverlayPanel {
 
     private final WildyAgilityLootTrackerPlugin plugin;
     private final WildyAgilityLootTrackerConfig config;
+    public                            Dimension lastDimension;
     public                              boolean isShutDown                     = false;
+    public                              boolean rebuilding                     = false;
     public     List<LayoutableRenderableEntity> _childCmps                     = null;
     public                       PanelComponent _supplyRow                     = null;
     public                       PanelComponent _steelRow                      = null;
@@ -52,7 +54,7 @@ public class WildyAgilityLootTrackerOverlay extends OverlayPanel {
         List<LayoutableRenderableEntity> panelChildren = _supplyRow.getChildren();
         if (config.getShowSupplies()) {
             for (LtaLootItem supplyItem : plugin.supplies) {
-                panelChildren.add(new LtaLootItemImage(supplyItem));
+                if (supplyItem.display){ panelChildren.add(new LtaLootItemImage(supplyItem)); }
             }
         }
         return _supplyRow;
@@ -139,9 +141,11 @@ public class WildyAgilityLootTrackerOverlay extends OverlayPanel {
         isShutDown = true;
     }
     @Override
-    public      Dimension render(Graphics2D graphics){ return super.render(graphics); }
+    public      Dimension render(Graphics2D graphics){ if (!rebuilding){ lastDimension = super.render(graphics); return lastDimension; } else { return null; } }
     public           void rebuild(){
+        rebuilding = true;
         panelComponent.getChildren().clear();
         buildComponents();
+        rebuilding = false;
     }
 }

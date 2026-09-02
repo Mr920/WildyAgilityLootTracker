@@ -1,4 +1,7 @@
 package com.lita;
+
+import net.runelite.client.events.ConfigChanged;
+
 public class LtaPluginHelper {
     public static final String    pluginMainName = "WildyAgilityLootTracker";
     public static final String pluginMainPkgName = "com.lita";
@@ -31,6 +34,9 @@ public class LtaPluginHelper {
         author = String.format("RSN:%s/GitHub:%s/Name:%s", authorRSN, authorGithub, authorFullName);
     }
 
+    public static String toString(ConfigChanged cfgEvent){
+        return String.format("ConfigChanged { profile:%s, group:%s, key:%s, old:%s, new:%s }", cfgEvent.getProfile(), cfgEvent.getGroup(), cfgEvent.getKey(), cfgEvent.getOldValue(), cfgEvent.getNewValue());
+    }
 
 }
 /*

@@ -167,6 +167,7 @@ public class WildyAgilityLootTrackerPlugin extends Plugin {
     @Provides WildyAgilityLootTrackerConfig provideConfig(){ return getConfig(); }
     @Subscribe public void onConfigChanged(ConfigChanged event){
         if (!event.getGroup().equals(CONFIG_GROUP_NAME)){ return; }
+        log.debug(LtaPluginHelper.toString(event));
         int[] itemIds;
         String itemType;
         switch(event.getKey()){
