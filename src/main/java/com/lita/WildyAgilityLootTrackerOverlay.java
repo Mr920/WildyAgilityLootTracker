@@ -140,4 +140,8 @@ public class WildyAgilityLootTrackerOverlay extends OverlayPanel {
     }
     @Override
     public      Dimension render(Graphics2D graphics){ return super.render(graphics); }
+    public           void rebuild(){
+        panelComponent.getChildren().clear();
+        buildComponents();
+    }
 }

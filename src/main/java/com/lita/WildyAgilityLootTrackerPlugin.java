@@ -10,10 +10,12 @@ import net.runelite.client.callback.ClientThread;
 import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.game.ItemManager;
+
 /* To-Do:
         [ ] Make this thing respect the config
         [ ] Session Management, complete with the ability to preserve historical information on the loot item quantities and prices from previous sessions
@@ -28,13 +30,23 @@ import net.runelite.client.game.ItemManager;
         https://static.runelite.net/runelite-client/apidocs/net/runelite/client/events/package-summary.html */
 @Slf4j
 @PluginDescriptor(
-    name = "WildyAgilityLootTracker"
+                    name = LtaPluginHelper.pluginMainName,
+              configName = LtaPluginHelper.configName,
+             description = LtaPluginHelper.description,
+                    tags = { LtaPluginHelper.TAG_1, LtaPluginHelper.TAG_2, LtaPluginHelper.TAG_3, LtaPluginHelper.TAG_4, LtaPluginHelper.TAG_5 },
+               conflicts = {},
+        enabledByDefault = LtaPluginHelper.enabledByDefault,
+                  hidden = LtaPluginHelper.hidden,
+         developerPlugin = LtaPluginHelper.developerPlugin,
+          loadInSafeMode = LtaPluginHelper.loadInSafeMode
 )
 public class WildyAgilityLootTrackerPlugin extends Plugin {
-            public static final                int GAME_AREA_CLIENT_TICK_EVERY =  25; // half a second
-            public static final             String CONFIG_GROUP_NAME           = "WildyAgilityLootTracker";
+            public static final                                  int GAME_AREA_CLIENT_TICK_EVERY =  25; // half a second
+            public static final                               String CONFIG_GROUP_NAME           = LtaPluginHelper.configName;
+            public static final Class<WildyAgilityLootTrackerConfig> CONFIG_CLS                  = WildyAgilityLootTrackerConfig.class;
     @Inject public                          Client client;
     @Inject public                    ClientThread clientThread;
+    @Inject public                   ConfigManager configManager;
     @Inject public   WildyAgilityLootTrackerConfig config;
     @Inject public              ChatMessageManager chatMessageManager;
     @Inject public                  OverlayManager overlayManager;
@@ -151,6 +163,34 @@ public class WildyAgilityLootTrackerPlugin extends Plugin {
             }
         }
     }
-    @Provides
-    WildyAgilityLootTrackerConfig provideConfig(ConfigManager configManager){ return configManager.getConfig(WildyAgilityLootTrackerConfig.class); }
+    WildyAgilityLootTrackerConfig getConfig(){ return configManager.getConfig(CONFIG_CLS); }
+    @Provides WildyAgilityLootTrackerConfig provideConfig(){ return getConfig(); }
+    @Subscribe public void onConfigChanged(ConfigChanged event){
+        if (!event.getGroup().equals(CONFIG_GROUP_NAME)){ return; }
+        int[] itemIds;
+        String itemType;
+        switch(event.getKey()){
+            case WildyAgilityLootTrackerConfig.KEY_SHOW_SUPPLIES:       itemType = LtaLootItem.TYPE_SUPPLY; itemIds = LtaLootItem.getSupplyItemIds();        break;
+            case WildyAgilityLootTrackerConfig.KEY_SHOW_STEEL_ARMOUR:   itemType = LtaLootItem.TYPE_ARMOUR; itemIds = LtaLootItem.getSteelArmourItemIds();   break;
+            case WildyAgilityLootTrackerConfig.KEY_SHOW_MITHRIL_ARMOUR: itemType = LtaLootItem.TYPE_ARMOUR; itemIds = LtaLootItem.getMithrilArmourItemIds(); break;
+            case WildyAgilityLootTrackerConfig.KEY_SHOW_ADAMANT_ARMOUR: itemType = LtaLootItem.TYPE_ARMOUR; itemIds = LtaLootItem.getAdamantArmourItemIds(); break;
+            case WildyAgilityLootTrackerConfig.KEY_SHOW_RUNE_ARMOUR:    itemType = LtaLootItem.TYPE_ARMOUR; itemIds = LtaLootItem.getRuneArmourItemIds();    break;
+            default: itemType = ""; itemIds = new int[]{}; break;
+        }
+        switch(itemType){
+            case LtaLootItem.TYPE_SUPPLY:
+                for (int supplyItemId: itemIds){
+                    LtaLootItem supplyItem = getMatchingSupplyItem(supplyItemId);
+                    supplyItem._detectIfConfigured(config);
+                }
+                break;
+            case LtaLootItem.TYPE_ARMOUR:
+                for (int armourItemId: itemIds){
+                    LtaLootItem armourItem = getMatchingArmourItem(armourItemId);
+                    armourItem._detectIfConfigured(config);
+                }
+                break;
+        }
+        overlay.rebuild();
+    }
 }
